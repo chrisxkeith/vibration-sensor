@@ -19,26 +19,30 @@ SYSTEM_THREAD(ENABLED);
 // View logs with CLI using 'particle serial monitor --follow'
 SerialLogHandler logHandler(LOG_LEVEL_INFO);
 
-const int PIEZO_PIN = A0; // Piezo output
+const int PIEZO_PIN_0 = A0;
+const int PIEZO_PIN_1 = A1;
+const int WAIT_BETWEEN_READS_MS = 25;
+const int NUM_SAMPLES = 1000 / 25;
 
-// setup() runs once, when the device is first turned on
 void setup() {
-  Serial.begin(57600);
-  pinMode(PIEZO_PIN, INPUT);
+  pinMode(PIEZO_PIN_0, INPUT);
+  pinMode(PIEZO_PIN_1, INPUT);
 }
 
-// loop() runs over and over again, as quickly as it can execute.
 void loop() {
-  // Read Piezo ADC value in, and convert it to a voltage
-  const int WAIT_BETWEEN_READS_MS = 25;
-  const int NUM_SAMPLES = 1000 / 25;
-  float total_piezo = 0.0;
+  float total_piezo_0 = 0.0;
+  float total_piezo_1 = 0.0;
   for (int i = 0; i < NUM_SAMPLES; i++) {
-    int piezoADC = analogRead(PIEZO_PIN);
-    float piezoV = piezoADC / 1023.0 * 5.0;
-    total_piezo += piezoV;
+    int piezoADC = analogRead(PIEZO_PIN_0);
+    float piezoV = piezoADC / 1023.0 * 3.0;
+    total_piezo_0 += piezoV;
+    piezoADC = analogRead(PIEZO_PIN_1);
+    piezoV = piezoADC / 1023.0 * 3.0;
+    total_piezo_1 += piezoV;
     delay(WAIT_BETWEEN_READS_MS);
   }
-  float average_piezo = total_piezo / NUM_SAMPLES;
-  Particle.publish("Voltage", String(average_piezo)); // Print the voltage.
+  String vals(total_piezo_0 / NUM_SAMPLES);
+  vals.concat(",");
+  vals.concat(total_piezo_1 / NUM_SAMPLES);
+  Particle.publish("unweighted,weighted", vals);
 }
