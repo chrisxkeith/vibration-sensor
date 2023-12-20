@@ -19,30 +19,28 @@ SYSTEM_THREAD(ENABLED);
 // View logs with CLI using 'particle serial monitor --follow'
 SerialLogHandler logHandler(LOG_LEVEL_INFO);
 
-const int PIEZO_PIN_0 = A0;
-const int PIEZO_PIN_1 = A1;
+const int PIEZO_PIN_UNWEIGHTED = A0;
+const int PIEZO_PIN_WEIGHTED = A1;
+const int PIN = PIEZO_PIN_WEIGHTED;
 const int WAIT_BETWEEN_READS_MS = 25;
-const int NUM_SAMPLES = 1000 / 25;
+const int NUM_SAMPLES = 1000 / 25; // Collect samples for 1000 ms.
 
 void setup() {
-  pinMode(PIEZO_PIN_0, INPUT);
-  pinMode(PIEZO_PIN_1, INPUT);
+  pinMode(PIN, INPUT);
+}
+
+float getVoltage(int pin) {
+  float total_piezo_0 = 0.0;
+  for (int i = 0; i < NUM_SAMPLES; i++) {
+    int piezoADC = analogRead(pin);
+    float piezoV = piezoADC / 1023.0 * 3.0;
+    total_piezo_0 += piezoV;
+    delay(WAIT_BETWEEN_READS_MS);
+  }
+  return total_piezo_0 / NUM_SAMPLES;
 }
 
 void loop() {
-  float total_piezo_0 = 0.0;
-  float total_piezo_1 = 0.0;
-  for (int i = 0; i < NUM_SAMPLES; i++) {
-    int piezoADC = analogRead(PIEZO_PIN_0);
-    float piezoV = piezoADC / 1023.0 * 3.0;
-    total_piezo_0 += piezoV;
-    piezoADC = analogRead(PIEZO_PIN_1);
-    piezoV = piezoADC / 1023.0 * 3.0;
-    total_piezo_1 += piezoV;
-    delay(WAIT_BETWEEN_READS_MS);
-  }
-  String vals(total_piezo_0 / NUM_SAMPLES);
-  vals.concat(",");
-  vals.concat(total_piezo_1 / NUM_SAMPLES);
-  Particle.publish("unweighted,weighted", vals);
+  String val(getVoltage(PIN));
+  Particle.publish("Voltage", val);
 }
