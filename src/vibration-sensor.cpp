@@ -21,12 +21,12 @@ SerialLogHandler logHandler(LOG_LEVEL_INFO);
 
 const int PIEZO_PIN_UNWEIGHTED = A0;
 const int PIEZO_PIN_WEIGHTED = A1;
-const int PIN = PIEZO_PIN_WEIGHTED;
 const int WAIT_BETWEEN_READS_MS = 25;
 const int NUM_SAMPLES = 1000 / 25; // Collect samples for 1000 ms.
 
 void setup() {
-  pinMode(PIN, INPUT);
+  pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
+  pinMode(PIEZO_PIN_WEIGHTED, INPUT);
 }
 
 float getVoltage(int pin) {
@@ -41,6 +41,8 @@ float getVoltage(int pin) {
 }
 
 void loop() {
-  String val(getVoltage(PIN));
-  Particle.publish("Voltage sensor", val);
+  String val1(getVoltage(PIEZO_PIN_WEIGHTED));
+  Particle.publish("Voltage weighted sensor", val1);
+  String val2(getVoltage(PIEZO_PIN_UNWEIGHTED));
+  Particle.publish("Voltage unweighted sensor", val2);
 }
