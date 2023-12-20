@@ -42,5 +42,5 @@ float getVoltage(int pin) {
 
 void loop() {
   String val(getVoltage(PIN));
-  Particle.publish("Voltage", val);
+  Particle.publish("Voltage sensor", val);
 }
