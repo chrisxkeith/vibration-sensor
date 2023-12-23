@@ -22,7 +22,7 @@ SerialLogHandler logHandler(LOG_LEVEL_INFO);
 const int PIEZO_PIN_UNWEIGHTED = A0;
 const int PIEZO_PIN_WEIGHTED = A1;
 const int WAIT_BETWEEN_READS_MS = 25;
-const int NUM_SAMPLES = 1000 / 25; // Collect samples for 1000 ms.
+const int NUM_SAMPLES = 2000 / 25; // Collect samples for 2000 ms. Also controls publish frequency.
 
 void setup() {
   pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
