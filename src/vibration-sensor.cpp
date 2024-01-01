@@ -19,13 +19,6 @@ SYSTEM_THREAD(ENABLED);
 // View logs with CLI using 'particle serial monitor --follow'
 SerialLogHandler logHandler(LOG_LEVEL_INFO);
 
-int seconds_for_sample = 1;
-
-const int PIEZO_PIN_UNWEIGHTED = A0;
-const int PIEZO_PIN_WEIGHTED = A1;
-const int WAIT_BETWEEN_READS_MS = 25;
-const int NUM_SAMPLES = (seconds_for_sample * 1000) / 25;
-
 class JSonizer {
   public:
     static void addFirstSetting(String& json, String key, String val);
@@ -169,25 +162,53 @@ class Utils {
 };
 int Utils::publishRateInSeconds = 10;
 
-float getVoltage(int pin) {
-  float total_piezo_0 = 0.0;
-  for (int i = 0; i < NUM_SAMPLES; i++) {
-    int piezoADC = analogRead(pin);
-    float piezoV = piezoADC / 1023.0 * 3.0;
-    total_piezo_0 += piezoV;
-    delay(WAIT_BETWEEN_READS_MS);
-  }
-  return total_piezo_0 / NUM_SAMPLES;
-}
+class SensorHandler {
+  private:
+    int seconds_for_sample = 1;
 
-int sample_and_publish(String cmd) {
-  String val1(getVoltage(PIEZO_PIN_WEIGHTED));
-  Particle.publish("Voltage weighted sensor", val1);
-  return 1;
-}
+    const int PIEZO_PIN_WEIGHTED = A1;
+    const int WAIT_BETWEEN_READS_MS = 25;
+    const int NUM_SAMPLES = (seconds_for_sample * 1000) / 25;
+
+    float getVoltage(int pin) {
+      float total_piezo_0 = 0.0;
+      for (int i = 0; i < NUM_SAMPLES; i++) {
+        int piezoADC = analogRead(pin);
+        float piezoV = piezoADC / 1023.0 * 3.0;
+        total_piezo_0 += piezoV;
+        delay(WAIT_BETWEEN_READS_MS);
+      }
+      return total_piezo_0 / NUM_SAMPLES;
+    }
+  public:
+    SensorHandler() {
+      pinMode(PIEZO_PIN_WEIGHTED, INPUT);
+      pinMode(PIEZO_PIN_WEIGHTED, INPUT);
+    }
+    int sample_and_publish() {
+      String val1(getVoltage(PIEZO_PIN_WEIGHTED));
+      Particle.publish("Voltage weighted sensor", val1);
+      delay((Utils::publishRateInSeconds - seconds_for_sample) * 1000);
+      return 1;
+    }
+    void publishJson() {
+      String json("{");
+      JSonizer::addFirstSetting(json, "seconds_for_sample", String(seconds_for_sample));
+      JSonizer::addSetting(json, "PIEZO_PIN_WEIGHTED", String(PIEZO_PIN_WEIGHTED));
+      JSonizer::addSetting(json, "WAIT_BETWEEN_READS_MS", String(WAIT_BETWEEN_READS_MS));
+      JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
+      json.concat("}");
+      Particle.publish("SensorHandler json", json);
+    }
+};
+SensorHandler sensorhandler;
 
 int set_publish_rate(String cmd) {
   return Utils::setPublishRate(cmd);
+}
+
+int sample_and_publish(String cmd) {
+  return sensorhandler.sample_and_publish();
 }
 
 // getSettings() is already defined somewhere.
@@ -196,6 +217,8 @@ int publish_settings(String command) {
         Utils::publishJson();
     } else if (command.compareTo("time") == 0) {
         timeSupport.publishJson();
+    } else if (command.compareTo("sensor") == 0) {
+        sensorhandler.publishJson();
     } else {
         Particle.publish("publish_settings bad input", command);
         return -1;
@@ -204,8 +227,6 @@ int publish_settings(String command) {
 }
 
 void setup() {
-  pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
-  pinMode(PIEZO_PIN_WEIGHTED, INPUT);
   Particle.function("GetData", sample_and_publish);
   Particle.function("SetPubRate", set_publish_rate);
   Particle.function("GetSetting", publish_settings);
@@ -214,5 +235,4 @@ void setup() {
 void loop() {
   timeSupport.handleTime();
   sample_and_publish("");
-  delay((Utils::publishRateInSeconds - seconds_for_sample) * 1000);
 }
