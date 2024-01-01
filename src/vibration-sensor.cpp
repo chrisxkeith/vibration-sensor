@@ -169,6 +169,7 @@ class SensorHandler {
     const int PIEZO_PIN_WEIGHTED = A1;
     const int WAIT_BETWEEN_READS_MS = 25;
     const int NUM_SAMPLES = (seconds_for_sample * 1000) / 25;
+    const float THRESHOLD = 0.232; // Average baseline == 0.228, Average during vibration == 0.223
 
     float getVoltage(int pin) {
       float total_piezo_0 = 0.0;
@@ -186,8 +187,13 @@ class SensorHandler {
       pinMode(PIEZO_PIN_WEIGHTED, INPUT);
     }
     int sample_and_publish() {
-      String val1(getVoltage(PIEZO_PIN_WEIGHTED));
+      float v = getVoltage(PIEZO_PIN_WEIGHTED);
+      String val1(v);
       Particle.publish("Voltage weighted sensor", val1);
+      if (v > THRESHOLD) {
+        delay(1000);
+        Particle.publish("Voltage sensor over threshold", val1);
+      }
       delay((Utils::publishRateInSeconds - seconds_for_sample) * 1000);
       return 1;
     }
