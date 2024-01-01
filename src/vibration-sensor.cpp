@@ -19,15 +19,30 @@ SYSTEM_THREAD(ENABLED);
 // View logs with CLI using 'particle serial monitor --follow'
 SerialLogHandler logHandler(LOG_LEVEL_INFO);
 
+int seconds_for_sample = 1;
+
 const int PIEZO_PIN_UNWEIGHTED = A0;
 const int PIEZO_PIN_WEIGHTED = A1;
 const int WAIT_BETWEEN_READS_MS = 25;
-const int NUM_SAMPLES = 1000 / 25; // Collect samples for 1000 ms. Also controls publish frequency.
+const int NUM_SAMPLES = (seconds_for_sample * 1000) / 25;
 
-void setup() {
-  pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
-  pinMode(PIEZO_PIN_WEIGHTED, INPUT);
-}
+class Utils {
+  public:
+    static int publishRateInSeconds;
+
+    static int setInt(String command, int& i, int lower, int upper) {
+      int tempMin = command.toInt();
+      if (tempMin > lower && tempMin < upper) {
+          i = tempMin;
+          return 1;
+      }
+      return -1;
+    }
+    static int setPublishRate(String cmd) {
+      return setInt(cmd, publishRateInSeconds, 1, 60);
+    }
+};
+int Utils::publishRateInSeconds = 10;
 
 float getVoltage(int pin) {
   float total_piezo_0 = 0.0;
@@ -40,9 +55,24 @@ float getVoltage(int pin) {
   return total_piezo_0 / NUM_SAMPLES;
 }
 
-void loop() {
+int sample_and_publish(String cmd) {
   String val1(getVoltage(PIEZO_PIN_WEIGHTED));
   Particle.publish("Voltage weighted sensor", val1);
-  String val2(getVoltage(PIEZO_PIN_UNWEIGHTED));
-  Particle.publish("Voltage unweighted sensor", val2);
+  return 1;
+}
+
+int set_publish_rate(String cmd) {
+  return Utils::setPublishRate(cmd);
+}
+
+void setup() {
+  pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
+  pinMode(PIEZO_PIN_WEIGHTED, INPUT);
+  Particle.function("GetData", sample_and_publish);
+  Particle.function("SetPubRate", set_publish_rate);
+}
+
+void loop() {
+  sample_and_publish("");
+  delay((Utils::publishRateInSeconds - seconds_for_sample) * 1000);
 }
