@@ -169,7 +169,10 @@ class SensorHandler {
     const int PIEZO_PIN_WEIGHTED = A1;
     const int WAIT_BETWEEN_READS_MS = 25;
     const int NUM_SAMPLES = (seconds_for_sample * 1000) / 25;
-    const float THRESHOLD = 0.232; // Average baseline == 0.228, Average during vibration == 0.223
+    const float FIRST_BASELINE = 0.212;
+    const float FIRST_DURING_VIBRATION = 0.233;
+    const float LATEST_BASELINE = 0.228;
+    const float THRESHOLD = FIRST_DURING_VIBRATION - FIRST_BASELINE + LATEST_BASELINE - 0.01;
 
     float getVoltage(int pin) {
       float total_piezo_0 = 0.0;
@@ -190,11 +193,14 @@ class SensorHandler {
       float v = getVoltage(PIEZO_PIN_WEIGHTED);
       String val1(v);
       Particle.publish("Voltage weighted sensor", val1);
+      int theDelay = Utils::publishRateInSeconds - seconds_for_sample;
       if (v > THRESHOLD) {
-        delay(1000);
+        delay(2000);
+        theDelay -= 2;
+        theDelay = std::max(theDelay, 1);
         Particle.publish("Voltage sensor over threshold", val1);
       }
-      delay((Utils::publishRateInSeconds - seconds_for_sample) * 1000);
+      delay(theDelay * 1000);
       return 1;
     }
     void publishJson() {
@@ -203,6 +209,10 @@ class SensorHandler {
       JSonizer::addSetting(json, "PIEZO_PIN_WEIGHTED", String(PIEZO_PIN_WEIGHTED));
       JSonizer::addSetting(json, "WAIT_BETWEEN_READS_MS", String(WAIT_BETWEEN_READS_MS));
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
+      JSonizer::addSetting(json, "FIRST_BASELINE", String(FIRST_BASELINE));
+      JSonizer::addSetting(json, "FIRST_DURING_VIBRATION", String(FIRST_DURING_VIBRATION));
+      JSonizer::addSetting(json, "LATEST_BASELINE", String(LATEST_BASELINE));
+      JSonizer::addSetting(json, "THRESHOLD", String(THRESHOLD));
       json.concat("}");
       Particle.publish("SensorHandler json", json);
     }
