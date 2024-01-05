@@ -166,6 +166,7 @@ class SensorHandler {
   private:
     int seconds_for_sample = 1;
 
+    const int PIEZO_PIN_UNWEIGHTED = A0;
     const int PIEZO_PIN_WEIGHTED = A1;
     const int WAIT_BETWEEN_READS_MS = 25;
     const int NUM_SAMPLES = (seconds_for_sample * 1000) / 25;
@@ -184,23 +185,32 @@ class SensorHandler {
       }
       return total_piezo_0 / NUM_SAMPLES;
     }
-  public:
-    SensorHandler() {
-      pinMode(PIEZO_PIN_WEIGHTED, INPUT);
-      pinMode(PIEZO_PIN_WEIGHTED, INPUT);
-    }
-    int sample_and_publish() {
-      float v = getVoltage(PIEZO_PIN_WEIGHTED);
+    void  sample_and_publish_(int pin, String theType) {
+      float v = getVoltage(pin);
       String val1(v);
-      Particle.publish("Voltage weighted sensor", val1);
+      String event("Voltage ");
+      event.concat(theType);
+      event.concat(" sensor");
+      Particle.publish(event, val1);
       int theDelay = Utils::publishRateInSeconds - seconds_for_sample;
+      /*
       if (v > THRESHOLD) {
         delay(2000);
         theDelay -= 2;
         theDelay = std::max(theDelay, 1);
         Particle.publish("Voltage sensor over threshold", val1);
       }
+      */
       delay(theDelay * 1000);
+    }
+  public:
+    SensorHandler() {
+      pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
+      pinMode(PIEZO_PIN_WEIGHTED, INPUT);
+    }
+    int sample_and_publish() {
+      sample_and_publish_(PIEZO_PIN_UNWEIGHTED, "unweighted");
+      sample_and_publish_(PIEZO_PIN_WEIGHTED, "weighted");
       return 1;
     }
     void publishJson() {
