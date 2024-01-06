@@ -179,7 +179,7 @@ class SensorHandler {
       float total_piezo_0 = 0.0;
       for (int i = 0; i < NUM_SAMPLES; i++) {
         int piezoADC = analogRead(pin);
-        float piezoV = piezoADC / 1023.0 * 3.0;
+        float piezoV = piezoADC / 1023.0 * 5.0;
         total_piezo_0 += piezoV;
         delay(WAIT_BETWEEN_READS_MS);
       }
