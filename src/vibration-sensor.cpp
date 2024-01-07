@@ -139,28 +139,53 @@ TimeSupport    timeSupport(-8);
 
 class Utils {
   public:
-    static int publishRateInSeconds;
-
     static int setInt(String command, int& i, int lower, int upper) {
       int tempMin = command.toInt();
-      if (tempMin > lower && tempMin < upper) {
+      if (tempMin >= lower && tempMin <= upper) {
           i = tempMin;
           return 1;
       }
       return -1;
     }
-    static int setPublishRate(String cmd) {
-      return setInt(cmd, publishRateInSeconds, 1, 60);
-    }
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "publishRateInSeconds", String(publishRateInSeconds));
       json.concat("}");
       Particle.publish("Utils json", json);
     }
 };
-int Utils::publishRateInSeconds = 10;
+
+class PublishRateHandler {
+  public:
+    int publishRateInSeconds = 10;
+    int previousRate = publishRateInSeconds;
+    int revertTime = -1;
+
+    int setPublishRate(String cmd) {
+      return Utils::setInt(cmd, publishRateInSeconds, 1, 60);
+    }
+    void resetRate(int rate, int secondsToRevert) {
+      previousRate = publishRateInSeconds;
+      publishRateInSeconds = rate;
+      revertTime = millis() + (secondsToRevert * 1000);
+    }
+    void checkforRevert() {
+      if (millis() < revertTime) {
+        publishRateInSeconds = previousRate;
+        revertTime = -1;
+      }
+    }
+    void publishJson() {
+      String json("{");
+      JSonizer::addFirstSetting(json, "publishRateInSeconds", String(publishRateInSeconds));
+      JSonizer::addSetting(json, "previousRate", String(previousRate));
+      JSonizer::addSetting(json, "revertTime", String(revertTime));
+      JSonizer::addSetting(json, "millis()", String(millis()));
+      json.concat("}");
+      Particle.publish("PublishRateHandler json", json);
+    }
+};
+PublishRateHandler publishRateHandler;
 
 class SensorHandler {
   private:
@@ -170,10 +195,6 @@ class SensorHandler {
     const int PIEZO_PIN_WEIGHTED = A1;
     const int WAIT_BETWEEN_READS_MS = 25;
     const int NUM_SAMPLES = (seconds_for_sample * 1000) / 25;
-    const float FIRST_BASELINE = 0.212;
-    const float FIRST_DURING_VIBRATION = 0.233;
-    const float LATEST_BASELINE = 0.228;
-    const float THRESHOLD = FIRST_DURING_VIBRATION - FIRST_BASELINE + LATEST_BASELINE - 0.01;
 
     float getVoltage(int pin) {
       float total_piezo_0 = 0.0;
@@ -192,15 +213,7 @@ class SensorHandler {
       event.concat(theType);
       event.concat(" sensor");
       Particle.publish(event, val1);
-      int theDelay = Utils::publishRateInSeconds - seconds_for_sample;
-      /*
-      if (v > THRESHOLD) {
-        delay(2000);
-        theDelay -= 2;
-        theDelay = std::max(theDelay, 1);
-        Particle.publish("Voltage sensor over threshold", val1);
-      }
-      */
+      int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
       delay(theDelay * 1000);
     }
   public:
@@ -216,13 +229,10 @@ class SensorHandler {
     void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "seconds_for_sample", String(seconds_for_sample));
+      JSonizer::addSetting(json, "PIEZO_PIN_UNWEIGHTED", String(PIEZO_PIN_UNWEIGHTED));
       JSonizer::addSetting(json, "PIEZO_PIN_WEIGHTED", String(PIEZO_PIN_WEIGHTED));
       JSonizer::addSetting(json, "WAIT_BETWEEN_READS_MS", String(WAIT_BETWEEN_READS_MS));
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
-      JSonizer::addSetting(json, "FIRST_BASELINE", String(FIRST_BASELINE));
-      JSonizer::addSetting(json, "FIRST_DURING_VIBRATION", String(FIRST_DURING_VIBRATION));
-      JSonizer::addSetting(json, "LATEST_BASELINE", String(LATEST_BASELINE));
-      JSonizer::addSetting(json, "THRESHOLD", String(THRESHOLD));
       json.concat("}");
       Particle.publish("SensorHandler json", json);
     }
@@ -230,7 +240,7 @@ class SensorHandler {
 SensorHandler sensorhandler;
 
 int set_publish_rate(String cmd) {
-  return Utils::setPublishRate(cmd);
+  return publishRateHandler.setPublishRate(cmd);
 }
 
 int sample_and_publish(String cmd) {
@@ -245,8 +255,12 @@ int publish_settings(String command) {
         timeSupport.publishJson();
     } else if (command.compareTo("sensor") == 0) {
         sensorhandler.publishJson();
+    } else if (command.compareTo("rate") == 0) {
+        publishRateHandler.publishJson();
     } else {
-        Particle.publish("publish_settings bad input", command);
+        String msg(command);
+        msg.concat(" : expected [empty], \"time\", \"sensor\" or \"rate\"");
+        Particle.publish("publish_settings bad input", msg);
         return -1;
     }
     return 1;
