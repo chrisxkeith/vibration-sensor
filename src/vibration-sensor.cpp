@@ -190,43 +190,32 @@ PublishRateHandler publishRateHandler;
 class SensorHandler {
   private:
     int seconds_for_sample = 1;
-    float most_recent_max = __FLT_MIN__;
-    float most_recent_min = __FLT_MAX__;
-    float most_recent_avg = 0.0;
+    float max_weighted = __FLT_MIN__;
+    float max_unweighted = __FLT_MIN__;
 
     const int PIEZO_PIN_UNWEIGHTED = A0;
     const int PIEZO_PIN_WEIGHTED = A1;
     const int WAIT_BETWEEN_READS_MS = 25;
     const int NUM_SAMPLES = (seconds_for_sample * 1000) / 25;
 
-    void getVoltage(int pin) {
-      most_recent_max = __FLT_MIN__;
-      most_recent_min = __FLT_MAX__;
-      float total_piezo_0 = 0.0;
-      for (int i = 0; i < NUM_SAMPLES; i++) {
+    float getVoltage(int pin) {
         int piezoADC = analogRead(pin);
-        float piezoV = piezoADC / 1023.0 * 5.0;
-        total_piezo_0 += piezoV;
-        if (piezoV < most_recent_min) {
-          most_recent_min = piezoV;
+        return piezoADC / 1023.0 * 5.0;
+    }
+    void getVoltages() {
+      max_weighted = __FLT_MIN__;
+      max_unweighted = __FLT_MIN__;
+      for (int i = 0; i < NUM_SAMPLES; i++) {
+        float piezoV = getVoltage(PIEZO_PIN_WEIGHTED);
+        if (piezoV > max_weighted) {
+          max_weighted = piezoV;
         }
-        if (piezoV > most_recent_max) {
-          most_recent_max = piezoV;
+        piezoV = getVoltage(PIEZO_PIN_UNWEIGHTED);
+        if (piezoV > max_unweighted) {
+          max_unweighted = piezoV;
         }
         delay(WAIT_BETWEEN_READS_MS);
       }
-      most_recent_avg = total_piezo_0 / NUM_SAMPLES;
-    }
-    void  sample_and_publish_(int pin, String theType) {
-      getVoltage(pin);
-      String json("{");
-      JSonizer::addFirstSetting(json, "most_recent_min", String(most_recent_min));
-      JSonizer::addSetting(json, "most_recent_max", String(most_recent_max));
-      JSonizer::addSetting(json, "most_recent_avg", String(most_recent_avg));
-      json.concat("}");
-      Particle.publish(theType, json);
-      int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
-      delay(theDelay * 1000);
     }
   public:
     SensorHandler() {
@@ -234,8 +223,14 @@ class SensorHandler {
       pinMode(PIEZO_PIN_WEIGHTED, INPUT);
     }
     int sample_and_publish() {
-      sample_and_publish_(PIEZO_PIN_UNWEIGHTED, "unweighted");
-      sample_and_publish_(PIEZO_PIN_WEIGHTED, "weighted");
+      getVoltages();
+      String json("{");
+      JSonizer::addFirstSetting(json, "max_weighted", String(max_weighted));
+      JSonizer::addSetting(json, "max_unweighted", String(max_unweighted));
+      json.concat("}");
+      Particle.publish("vibration", json);
+      int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
+      delay(theDelay * 1000);
       return 1;
     }
     void publishJson() {
@@ -245,9 +240,8 @@ class SensorHandler {
       JSonizer::addSetting(json, "PIEZO_PIN_WEIGHTED", String(PIEZO_PIN_WEIGHTED));
       JSonizer::addSetting(json, "WAIT_BETWEEN_READS_MS", String(WAIT_BETWEEN_READS_MS));
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
-      JSonizer::addSetting(json, "most_recent_max", String(most_recent_max));
-      JSonizer::addSetting(json, "most_recent_min", String(most_recent_min));
-      JSonizer::addSetting(json, "most_recent_avg", String(most_recent_avg));
+      JSonizer::addSetting(json, "max_weighted", String(max_weighted));
+      JSonizer::addSetting(json, "max_unweighted", String(max_unweighted));
       json.concat("}");
       Particle.publish("SensorHandler json", json);
     }
