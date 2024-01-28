@@ -159,7 +159,7 @@ class PublishRateHandler {
   public:
     int publishRateInSeconds = 10;
     int previousRate = publishRateInSeconds;
-    int revertTime = -1;
+    unsigned long revertTime = 0;
 
     int setPublishRate(String cmd) {
       return Utils::setInt(cmd, publishRateInSeconds, 1, 60);
