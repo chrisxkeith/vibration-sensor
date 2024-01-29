@@ -169,7 +169,7 @@ class EventBuilder {
 
 class PublishRateHandler {
   public:
-    int publishRateInSeconds = 10;
+    int publishRateInSeconds = 2;
     int previousRate = publishRateInSeconds;
     unsigned long revertTime = 0;
 
@@ -212,7 +212,7 @@ class SensorHandler {
 
     float getVoltage(int pin) {
         int piezoADC = analogRead(pin);
-        return piezoADC / 1023.0 * 5.0;
+        return piezoADC / 4095.0 * 5.0; // Photon is 12-bit, not 10.
     }
     void getVoltages() {
       max_weighted = __FLT_MIN__;
