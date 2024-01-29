@@ -235,14 +235,17 @@ class SensorHandler {
       pinMode(PIEZO_PIN_WEIGHTED, INPUT);
     }
     int sample_and_publish() {
-      getVoltages();
-      String json("{");
-      JSonizer::addFirstSetting(json, "max_weighted", String(max_weighted));
-      JSonizer::addSetting(json, "max_unweighted", String(max_unweighted));
-      json.concat("}");
-      Particle.publish("vibration", json);
-      int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
-      delay(theDelay * 1000);
+      int hour = Time.hour();
+      if ((hour > 8) && (hour < 18)) { // 9 am to 5 pm, one hopes
+        getVoltages();
+        String json("{");
+        JSonizer::addFirstSetting(json, "max_weighted", String(max_weighted));
+        JSonizer::addSetting(json, "max_unweighted", String(max_unweighted));
+        json.concat("}");
+        Particle.publish("vibration", json);
+        int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
+        delay(theDelay * 1000);
+      }
       return 1;
     }
     void publishJson() {
