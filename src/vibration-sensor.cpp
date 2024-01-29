@@ -155,6 +155,18 @@ class Utils {
     }
 };
 
+class EventBuilder {
+  public:
+    String buffer;
+    bool addToBuffer(String s) {
+      if (buffer.length() + s.length() > particle::protocol::MAX_EVENT_DATA_LENGTH) {
+        return false; // caller should send the current buffer and clear it, then call this again.
+      }
+      buffer.concat(s);
+      return true;
+    }
+};
+
 class PublishRateHandler {
   public:
     int publishRateInSeconds = 10;
