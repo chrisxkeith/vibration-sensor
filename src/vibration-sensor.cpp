@@ -234,9 +234,7 @@ class SensorHandler {
       pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
       pinMode(PIEZO_PIN_WEIGHTED, INPUT);
     }
-    int sample_and_publish() {
-      int hour = Time.hour();
-      if ((hour > 8) && (hour < 18)) { // 9 am to 5 pm, one hopes
+    void sample_and_publish_() {
         getVoltages();
         String json("{");
         JSonizer::addFirstSetting(json, "max_weighted", String(max_weighted));
@@ -245,8 +243,16 @@ class SensorHandler {
         Particle.publish("vibration", json);
         int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
         delay(theDelay * 1000);
+    }
+    bool in_publish_window() {
+      int hour = Time.hour();
+      return ((hour > 8) && (hour < 18)); // 9 am to 5 pm, one hopes
+    }
+    void sample_and_publish() {
+      int hour = Time.hour();
+      if (in_publish_window()) {
+        sample_and_publish_();
       }
-      return 1;
     }
     void publishJson() {
       String json("{");
@@ -257,6 +263,7 @@ class SensorHandler {
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
       JSonizer::addSetting(json, "max_weighted", String(max_weighted));
       JSonizer::addSetting(json, "max_unweighted", String(max_unweighted));
+      JSonizer::addSetting(json, "in_publish_window()", String(JSonizer::toString(in_publish_window())));
       json.concat("}");
       Particle.publish("SensorHandler json", json);
     }
@@ -268,7 +275,8 @@ int set_publish_rate(String cmd) {
 }
 
 int sample_and_publish(String cmd) {
-  return sensorhandler.sample_and_publish();
+  sensorhandler.sample_and_publish_();
+  return 1;
 }
 
 // getSettings() is already defined somewhere.
@@ -298,5 +306,5 @@ void setup() {
 
 void loop() {
   timeSupport.handleTime();
-  sample_and_publish("");
+  sensorhandler.sample_and_publish();
 }
