@@ -137,7 +137,10 @@ void TimeSupport::publishJson() {
 }
 TimeSupport    timeSupport(-8);
 
+const static String PHOTON_01 = "1c002c001147343438323536";
+const static String PHOTON_09 = "1f0027001347363336383437";
 class Utils {
+  private:
   public:
     static int setInt(String command, int& i, int lower, int upper) {
       int tempMin = command.toInt();
@@ -150,20 +153,19 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
+      JSonizer::addSetting(json, "getDeviceLocation()", getDeviceLocation());
       json.concat("}");
       Particle.publish("Utils json", json);
     }
-};
-
-class EventBuilder {
-  public:
-    String buffer;
-    bool addToBuffer(String s) {
-      if (buffer.length() + s.length() > particle::protocol::MAX_EVENT_DATA_LENGTH) {
-        return false; // caller should send the current buffer and clear it, then call this again.
+    static String getDeviceLocation() {
+      String deviceID = System.deviceID();
+      if (deviceID.equals(PHOTON_01)) {
+        return "Washer";
       }
-      buffer.concat(s);
-      return true;
+      if (deviceID.equals(PHOTON_09)) {
+        return "Dryer";
+      }
+      return "Unknown location";
     }
 };
 
