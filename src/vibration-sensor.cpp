@@ -29,9 +29,14 @@ class JSonizer {
 void JSonizer::addFirstSetting(String& json, String key, String val) {
     json.concat("\"");
     json.concat(key);
-    json.concat("\":\"");
+    json.concat("\":");
+    if (val.charAt(0) != '{') {
+      json.concat("\"");
+    }
     json.concat(val);
-    json.concat("\"");
+    if (val.charAt(0) != '{') {
+      json.concat("\"");
+    }
 }
 
 void JSonizer::addSetting(String& json, String key, String val) {
@@ -125,7 +130,7 @@ void TimeSupport::doHandleTime() {
 }
 
 void TimeSupport::handleTime() {
-    int ONE_DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+    long unsigned int ONE_DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
     if (millis() - lastSyncMillis > ONE_DAY_IN_MILLISECONDS) {    // If it's been a day since last sync...
                                                             // Request time synchronization from the Particle Cloud
       this->doHandleTime();
@@ -231,6 +236,13 @@ class SensorHandler {
         delay(WAIT_BETWEEN_READS_MS);
       }
     }
+    String getJson(String name, float value) {
+      String json("{");
+      JSonizer::addFirstSetting(json, "eventName", name);
+      JSonizer::addSetting(json, "value", String(value));
+      json.concat("}");
+      return json;
+    }
   public:
     SensorHandler() {
       pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
@@ -239,8 +251,8 @@ class SensorHandler {
     void sample_and_publish_() {
         getVoltages();
         String json("{");
-        JSonizer::addFirstSetting(json, "max_weighted", String(max_weighted));
-        JSonizer::addSetting(json, "max_unweighted", String(max_unweighted));
+        JSonizer::addFirstSetting(json, "max_weighted", getJson(Utils::getDeviceLocation() + " weighted", max_weighted));
+        JSonizer::addSetting(json, "max_unweighted", getJson(Utils::getDeviceLocation() + " unweighted", max_unweighted));
         json.concat("}");
         Particle.publish("vibration", json);
         int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
@@ -251,7 +263,6 @@ class SensorHandler {
       return ((hour > 8) && (hour < 18)); // 9 am to 5 pm, one hopes
     }
     void sample_and_publish() {
-      int hour = Time.hour();
       if (in_publish_window()) {
         sample_and_publish_();
       }
