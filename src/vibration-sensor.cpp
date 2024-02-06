@@ -176,7 +176,7 @@ class Utils {
 
 class PublishRateHandler {
   public:
-    int publishRateInSeconds = 2;
+    int publishRateInSeconds = 5;
     int previousRate = publishRateInSeconds;
     unsigned long revertTime = 0;
 
