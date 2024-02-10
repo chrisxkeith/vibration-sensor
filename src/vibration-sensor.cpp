@@ -252,7 +252,7 @@ class SensorHandler {
         getVoltages();
         String json("{");
         JSonizer::addFirstSetting(json, "max_weighted", getJson(Utils::getDeviceLocation() + " weighted", max_weighted));
-        JSonizer::addSetting(json, "max_unweighted", getJson(Utils::getDeviceLocation() + " unweighted", max_unweighted));
+        // JSonizer::addSetting(json, "max_unweighted", getJson(Utils::getDeviceLocation() + " unweighted", max_unweighted));
         json.concat("}");
         Particle.publish("vibration", json);
         int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
