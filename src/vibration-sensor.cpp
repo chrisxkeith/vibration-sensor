@@ -260,7 +260,7 @@ class SensorHandler {
     }
     bool in_publish_window() {
       int hour = Time.hour();
-      return ((hour > 8) && (hour < 18)); // 9 am to 5 pm, one hopes
+      return ((hour > 7) && (hour < 18)); // 8 am to 5 pm, one hopes
     }
     void sample_and_publish() {
       if (in_publish_window()) {
