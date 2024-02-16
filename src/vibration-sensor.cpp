@@ -170,7 +170,7 @@ class Utils {
       if (deviceID.equals(PHOTON_09)) {
         return "Dryer";
       }
-      return "Unknown location";
+      return "DeviceID: " + deviceID;
     }
 };
 
@@ -285,15 +285,19 @@ class SensorHandler {
         num_reads++;
       }
       String ret;
-      const uint16_t INT_CUTOFF = 5;
+      const uint16_t INT_CUTOFF = 285;
       if (num_reads > 0 && (A0_val > INT_CUTOFF || A1_val > INT_CUTOFF)) {
+        ret.concat(timeSupport.now());
+        ret.concat(",");
         ret.concat(A0_val);
         ret.concat(",");
         ret.concat(A1_val);
         ret.concat(",");
         ret.concat(num_reads);
       }
-      Serial.println(ret);
+      if (ret.length() > 0) {
+        Serial.println(ret);
+      }
     }
     void publishJson() {
       String json("{");
