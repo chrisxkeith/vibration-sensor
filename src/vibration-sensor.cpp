@@ -266,6 +266,34 @@ class SensorHandler {
       if (in_publish_window()) {
         sample_and_publish_();
       }
+      printRawValues();
+    }
+    void printRawValues() {
+      uint16_t A0_val = 0;
+      uint16_t A1_val = 0;
+      uint16_t num_reads = 0;
+      unsigned long then = millis();
+      while (millis() - then < 1000) {
+      uint16_t raw = analogRead(A0);
+        if (raw > A0_val) {
+          A0_val = raw;
+        }
+        raw = analogRead(A1);
+        if (raw > A1_val) {
+          A1_val = raw;
+        }
+        num_reads++;
+      }
+      String ret;
+      const uint16_t INT_CUTOFF = 5;
+      if (num_reads > 0 && (A0_val > INT_CUTOFF || A1_val > INT_CUTOFF)) {
+        ret.concat(A0_val);
+        ret.concat(",");
+        ret.concat(A1_val);
+        ret.concat(",");
+        ret.concat(num_reads);
+      }
+      Serial.println(ret);
     }
     void publishJson() {
       String json("{");
@@ -312,6 +340,7 @@ int publish_settings(String command) {
 }
 
 void setup() {
+  Serial.begin(57600);
   Particle.function("GetData", sample_and_publish);
   Particle.function("SetPubRate", set_publish_rate);
   Particle.function("GetSetting", publish_settings);
