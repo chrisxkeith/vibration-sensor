@@ -182,7 +182,7 @@ class Utils {
       return "DeviceID: " + deviceID;
     }
     static uint16_t getDeviceCutoff() {
-      const uint16_t VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF = 340;
+      const uint16_t VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF = 400;
       const uint16_t VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF = 340; // for now, until determined
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) {
@@ -277,7 +277,7 @@ class SensorHandler {
       uint16_t num_reads = 0;
       unsigned long then = millis();
       while (millis() - then < 1000) {
-      uint16_t raw = analogRead(A0);
+        uint16_t raw = analogRead(A0);
         if (raw > A0_val) {
           A0_val = raw;
         }
@@ -296,6 +296,17 @@ class SensorHandler {
         ret.concat(num_reads);
         Serial.println(ret);
       }
+    }
+    uint16_t getMaxForPin(int pin) {
+      uint16_t pinVal = 0;
+      unsigned long then = millis();
+      while (millis() - then < 1000) {
+        uint16_t raw = analogRead(pin);
+        if (raw > pinVal) {
+          pinVal = raw;
+        }
+      }
+      return pinVal;
     }
     void sample_and_publish_p() {
         getVoltages();
@@ -328,6 +339,9 @@ class SensorHandler {
     void print_raw_values() {
       printRawValues(true);
     }
+    void determine_cutoff() {
+      Particle.publish("A0 cutoff", String(getMaxForPin(A0)));
+    }
     void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "seconds_for_sample", String(seconds_for_sample));
@@ -358,6 +372,12 @@ int print_raw(String cmd) {
   return 1;
 }
 
+// Only call when device is not vibrating.
+int determine_cutoff(String cmd) {
+  sensorhandler.determine_cutoff();
+  return 1;
+}
+
 // getSettings() is already defined somewhere.
 int publish_settings(String command) {
     if (command.compareTo("") == 0) {
@@ -383,6 +403,7 @@ void setup() {
   Particle.function("SetPubRate", set_publish_rate);
   Particle.function("GetSetting", publish_settings);
   Particle.function("PrintRaw", print_raw);
+  Particle.function("Cutoff", determine_cutoff);
 }
 
 void loop() {
