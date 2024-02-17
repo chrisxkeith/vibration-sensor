@@ -243,32 +243,7 @@ class SensorHandler {
       json.concat("}");
       return json;
     }
-  public:
-    SensorHandler() {
-      pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
-      pinMode(PIEZO_PIN_WEIGHTED, INPUT);
-    }
-    void sample_and_publish_() {
-        getVoltages();
-        String json("{");
-        JSonizer::addFirstSetting(json, "max_weighted", getJson(Utils::getDeviceLocation() + " weighted", max_weighted));
-        // JSonizer::addSetting(json, "max_unweighted", getJson(Utils::getDeviceLocation() + " unweighted", max_unweighted));
-        json.concat("}");
-        Particle.publish("vibration", json);
-        int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
-        delay(theDelay * 1000);
-    }
-    bool in_publish_window() {
-      int hour = Time.hour();
-      return ((hour > 7) && (hour < 18)); // 8 am to 5 pm, one hopes
-    }
-    void sample_and_publish() {
-      if (in_publish_window()) {
-        sample_and_publish_();
-      }
-      printRawValues();
-    }
-    void printRawValues() {
+    void printRawValues(bool force) {
       uint16_t A0_val = 0;
       uint16_t A1_val = 0;
       uint16_t num_reads = 0;
@@ -284,9 +259,9 @@ class SensorHandler {
         }
         num_reads++;
       }
-      String ret;
       const uint16_t INT_CUTOFF = 285;
-      if (num_reads > 0 && (A0_val > INT_CUTOFF || A1_val > INT_CUTOFF)) {
+      if (force || (num_reads > 0 && (A0_val > INT_CUTOFF || A1_val > INT_CUTOFF))) {
+        String ret;
         ret.concat(timeSupport.now());
         ret.concat(",");
         ret.concat(A0_val);
@@ -294,10 +269,39 @@ class SensorHandler {
         ret.concat(A1_val);
         ret.concat(",");
         ret.concat(num_reads);
-      }
-      if (ret.length() > 0) {
         Serial.println(ret);
       }
+    }
+    void sample_and_publish_p() {
+        getVoltages();
+        String json("{");
+        JSonizer::addFirstSetting(json, "max_weighted", getJson(Utils::getDeviceLocation() + " weighted", max_weighted));
+        // JSonizer::addSetting(json, "max_unweighted", getJson(Utils::getDeviceLocation() + " unweighted", max_unweighted));
+        json.concat("}");
+        Particle.publish("vibration", json);
+        int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
+        delay(theDelay * 1000);
+    }
+    bool in_publish_window() {
+      int hour = Time.hour();
+      return ((hour > 7) && (hour < 18)); // 8 am to 5 pm, one hopes
+    }
+  public:
+    SensorHandler() {
+      pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
+      pinMode(PIEZO_PIN_WEIGHTED, INPUT);
+    }
+    void sample_and_publish() {
+      if (in_publish_window()) {
+        sample_and_publish_p();
+      }
+      printRawValues(false);
+    }
+    void sample_and_publish_() {
+      sample_and_publish_p();
+    }
+    void print_raw_values() {
+      printRawValues(true);
     }
     void publishJson() {
       String json("{");
@@ -321,6 +325,11 @@ int set_publish_rate(String cmd) {
 
 int sample_and_publish(String cmd) {
   sensorhandler.sample_and_publish_();
+  return 1;
+}
+
+int print_raw(String cmd) {
+  sensorhandler.print_raw_values();
   return 1;
 }
 
@@ -348,6 +357,7 @@ void setup() {
   Particle.function("GetData", sample_and_publish);
   Particle.function("SetPubRate", set_publish_rate);
   Particle.function("GetSetting", publish_settings);
+  Particle.function("PrintRaw", print_raw);
 }
 
 void loop() {
