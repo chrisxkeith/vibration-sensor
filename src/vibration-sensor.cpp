@@ -143,6 +143,7 @@ void TimeSupport::publishJson() {
 TimeSupport    timeSupport(-8);
 
 const static String PHOTON_01 = "1c002c001147343438323536";
+const static String PHOTON_02 = "300040001347343438323536";
 const static String PHOTON_08 = "500041000b51353432383931";
 const static String PHOTON_09 = "1f0027001347363336383437";
 class Utils {
@@ -169,6 +170,9 @@ class Utils {
       if (deviceID.equals(PHOTON_01)) {
         return "Washer";
       }
+      if (deviceID.equals(PHOTON_02)) {
+        return "Test_02";
+      }
       if (deviceID.equals(PHOTON_08)) {
         return "Test_08";
       }
@@ -183,6 +187,9 @@ class Utils {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) {
         return VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF;
+      }
+      if (deviceID.equals(PHOTON_02)) {
+        return VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF;
       }
       if (deviceID.equals(PHOTON_08)) {
         return VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF;
