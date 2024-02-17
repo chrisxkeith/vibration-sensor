@@ -259,14 +259,12 @@ class SensorHandler {
         }
         num_reads++;
       }
-      const uint16_t INT_CUTOFF = 285;
-      if (force || (num_reads > 0 && (A0_val > INT_CUTOFF || A1_val > INT_CUTOFF))) {
+      const uint16_t VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF = 340;
+      if (force || (num_reads > 0 && (A0_val > VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF))) {
         String ret;
         ret.concat(timeSupport.now());
         ret.concat(",");
         ret.concat(A0_val);
-        ret.concat(",");
-        ret.concat(A1_val);
         ret.concat(",");
         ret.concat(num_reads);
         Serial.println(ret);
