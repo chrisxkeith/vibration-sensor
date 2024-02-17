@@ -143,6 +143,7 @@ void TimeSupport::publishJson() {
 TimeSupport    timeSupport(-8);
 
 const static String PHOTON_01 = "1c002c001147343438323536";
+const static String PHOTON_08 = "500041000b51353432383931";
 const static String PHOTON_09 = "1f0027001347363336383437";
 class Utils {
   private:
@@ -159,6 +160,7 @@ class Utils {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
       JSonizer::addSetting(json, "getDeviceLocation()", getDeviceLocation());
+      JSonizer::addSetting(json, "getDeviceCutoff()", String(getDeviceCutoff()));
       json.concat("}");
       Particle.publish("Utils json", json);
     }
@@ -167,10 +169,29 @@ class Utils {
       if (deviceID.equals(PHOTON_01)) {
         return "Washer";
       }
+      if (deviceID.equals(PHOTON_08)) {
+        return "Test_08";
+      }
       if (deviceID.equals(PHOTON_09)) {
         return "Dryer";
       }
       return "DeviceID: " + deviceID;
+    }
+    static uint16_t getDeviceCutoff() {
+      const uint16_t VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF = 340;
+      const uint16_t VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF = 340; // for now, until determined
+      String deviceID = System.deviceID();
+      if (deviceID.equals(PHOTON_01)) {
+        return VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF;
+      }
+      if (deviceID.equals(PHOTON_08)) {
+        return VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF;
+      }
+      if (deviceID.equals(PHOTON_09)) {
+        return VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF;
+      }
+      Particle.publish("Error", "Unknown device: " + deviceID + " in getDeviceCutoff()");
+      return 0;
     }
 };
 
@@ -259,8 +280,7 @@ class SensorHandler {
         }
         num_reads++;
       }
-      const uint16_t VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF = 340;
-      if (force || (num_reads > 0 && (A0_val > VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF))) {
+      if (force || (num_reads > 0 && (A0_val > Utils::getDeviceCutoff()))) {
         String ret;
         ret.concat(timeSupport.now());
         ret.concat(",");
