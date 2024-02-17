@@ -183,7 +183,7 @@ class Utils {
     }
     static uint16_t getDeviceCutoff() {
       const uint16_t VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF = 400;
-      const uint16_t VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF = 340; // for now, until determined
+      const uint16_t VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF = 550;
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) {
         return VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF;
