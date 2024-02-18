@@ -237,34 +237,28 @@ PublishRateHandler publishRateHandler;
 class SensorHandler {
   private:
     int seconds_for_sample = 1;
-    float max_weighted = __FLT_MIN__;
-    float max_unweighted = __FLT_MIN__;
+    uint16_t max_weighted = 0;
+    uint16_t max_unweighted = 0;
 
     const int PIEZO_PIN_UNWEIGHTED = A0;
     const int PIEZO_PIN_WEIGHTED = A1;
-    const int WAIT_BETWEEN_READS_MS = 25;
-    const int NUM_SAMPLES = (seconds_for_sample * 1000) / 25;
+    const int NUM_SAMPLES = 1000;
 
-    float getVoltage(int pin) {
-        int piezoADC = analogRead(pin);
-        return piezoADC / 4095.0 * 5.0; // Photon is 12-bit, not 10.
-    }
     void getVoltages() {
-      max_weighted = __FLT_MIN__;
-      max_unweighted = __FLT_MIN__;
+      max_weighted = 0;
+      max_unweighted = 0;
       for (int i = 0; i < NUM_SAMPLES; i++) {
-        float piezoV = getVoltage(PIEZO_PIN_WEIGHTED);
+        uint16_t piezoV = analogRead(PIEZO_PIN_WEIGHTED);
         if (piezoV > max_weighted) {
           max_weighted = piezoV;
         }
-        piezoV = getVoltage(PIEZO_PIN_UNWEIGHTED);
+        piezoV = analogRead(PIEZO_PIN_UNWEIGHTED);
         if (piezoV > max_unweighted) {
           max_unweighted = piezoV;
         }
-        delay(WAIT_BETWEEN_READS_MS);
       }
     }
-    String getJson(String name, float value) {
+    String getJson(String name, uint16_t value) {
       String json("{");
       JSonizer::addFirstSetting(json, "eventName", name);
       JSonizer::addSetting(json, "value", String(value));
@@ -347,7 +341,6 @@ class SensorHandler {
       JSonizer::addFirstSetting(json, "seconds_for_sample", String(seconds_for_sample));
       JSonizer::addSetting(json, "PIEZO_PIN_UNWEIGHTED", String(PIEZO_PIN_UNWEIGHTED));
       JSonizer::addSetting(json, "PIEZO_PIN_WEIGHTED", String(PIEZO_PIN_WEIGHTED));
-      JSonizer::addSetting(json, "WAIT_BETWEEN_READS_MS", String(WAIT_BETWEEN_READS_MS));
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
       JSonizer::addSetting(json, "max_weighted", String(max_weighted));
       JSonizer::addSetting(json, "max_unweighted", String(max_unweighted));
