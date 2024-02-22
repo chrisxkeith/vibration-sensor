@@ -1,11 +1,3 @@
-/* 
- * Project myProject
- * Author: Your Name
- * Date: 
- * For comprehensive documentation and examples, please visit:
- * https://docs.particle.io/firmware/best-practices/firmware-template/
- */
-
 // Include Particle Device OS APIs
 #include "Particle.h"
 
@@ -202,59 +194,29 @@ class Utils {
     }
 };
 
-class PublishRateHandler {
-  public:
-    int publishRateInSeconds = 5;
-    int previousRate = publishRateInSeconds;
-    unsigned long revertTime = 0;
-
-    int setPublishRate(String cmd) {
-      return Utils::setInt(cmd, publishRateInSeconds, 1, 60);
-    }
-    void resetRate(int rate, int secondsToRevert) {
-      previousRate = publishRateInSeconds;
-      publishRateInSeconds = rate;
-      revertTime = millis() + (secondsToRevert * 1000);
-    }
-    void checkforRevert() {
-      if (millis() < revertTime) {
-        publishRateInSeconds = previousRate;
-        revertTime = -1;
-      }
-    }
-    void publishJson() {
-      String json("{");
-      JSonizer::addFirstSetting(json, "publishRateInSeconds", String(publishRateInSeconds));
-      JSonizer::addSetting(json, "previousRate", String(previousRate));
-      JSonizer::addSetting(json, "revertTime", String(revertTime));
-      JSonizer::addSetting(json, "millis()", String(millis()));
-      json.concat("}");
-      Particle.publish("PublishRateHandler json", json);
-    }
-};
-PublishRateHandler publishRateHandler;
-
 class SensorHandler {
   private:
     int seconds_for_sample = 1;
     uint16_t max_weighted = 0;
-    uint16_t max_unweighted = 0;
+    uint16_t accumulated_max = 0;
 
-    const int PIEZO_PIN_UNWEIGHTED = A0;
-    const int PIEZO_PIN_WEIGHTED = A1;
+    const int PIEZO_PIN_0 = A0;
     const int NUM_SAMPLES = 1000;
+    const int PUBLISH_RATE_IN_SECONDS = 5;
+
+    void accumulateMax() {
+        uint16_t piezo = analogRead(PIEZO_PIN_0);
+        if (piezo > accumulated_max) {
+          accumulated_max = piezo;
+        }
+    }
 
     void getVoltages() {
       max_weighted = 0;
-      max_unweighted = 0;
       for (int i = 0; i < NUM_SAMPLES; i++) {
-        uint16_t piezoV = analogRead(PIEZO_PIN_WEIGHTED);
+        uint16_t piezoV = analogRead(PIEZO_PIN_0);
         if (piezoV > max_weighted) {
           max_weighted = piezoV;
-        }
-        piezoV = analogRead(PIEZO_PIN_UNWEIGHTED);
-        if (piezoV > max_unweighted) {
-          max_unweighted = piezoV;
         }
       }
     }
@@ -267,17 +229,12 @@ class SensorHandler {
     }
     void printRawValues(bool force) {
       uint16_t A0_val = 0;
-      uint16_t A1_val = 0;
       uint16_t num_reads = 0;
       unsigned long then = millis();
       while (millis() - then < 1000) {
         uint16_t raw = analogRead(A0);
         if (raw > A0_val) {
           A0_val = raw;
-        }
-        raw = analogRead(A1);
-        if (raw > A1_val) {
-          A1_val = raw;
         }
         num_reads++;
       }
@@ -291,7 +248,7 @@ class SensorHandler {
         Serial.println(ret);
       }
     }
-    uint16_t getMaxForPin(int pin) {
+uint16_t getMaxForPin(int pin) {
       uint16_t pinVal = 0;
       unsigned long then = millis();
       while (millis() - then < 1000) {
@@ -306,25 +263,24 @@ class SensorHandler {
         getVoltages();
         String json("{");
         JSonizer::addFirstSetting(json, "max_weighted", getJson(Utils::getDeviceLocation() + " weighted", max_weighted));
-        // JSonizer::addSetting(json, "max_unweighted", getJson(Utils::getDeviceLocation() + " unweighted", max_unweighted));
         json.concat("}");
         Particle.publish("vibration", json);
-        int theDelay = publishRateHandler.publishRateInSeconds - seconds_for_sample;
+        int theDelay = PUBLISH_RATE_IN_SECONDS - seconds_for_sample;
         delay(theDelay * 1000);
     }
-    bool in_publish_window() {
+    bool in_washing_window() {
       int hour = Time.hour();
       return ((hour > 7) && (hour < 18)); // 8 am to 5 pm, one hopes
     }
   public:
     SensorHandler() {
-      pinMode(PIEZO_PIN_UNWEIGHTED, INPUT);
-      pinMode(PIEZO_PIN_WEIGHTED, INPUT);
+      pinMode(PIEZO_PIN_0, INPUT);
     }
     void sample_and_publish() {
-      if (in_publish_window()) {
+      if (in_washing_window()) {
         sample_and_publish_p();
       }
+      accumulateMax();
       printRawValues(false);
     }
     void sample_and_publish_() {
@@ -333,27 +289,25 @@ class SensorHandler {
     void print_raw_values() {
       printRawValues(true);
     }
+    void reset_max() {
+      accumulated_max = 0;
+    }
     void determine_cutoff() {
       Particle.publish("A0 cutoff", String(getMaxForPin(A0)));
     }
     void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "seconds_for_sample", String(seconds_for_sample));
-      JSonizer::addSetting(json, "PIEZO_PIN_UNWEIGHTED", String(PIEZO_PIN_UNWEIGHTED));
-      JSonizer::addSetting(json, "PIEZO_PIN_WEIGHTED", String(PIEZO_PIN_WEIGHTED));
+      JSonizer::addSetting(json, "PIEZO_PIN_0", String(PIEZO_PIN_0));
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
       JSonizer::addSetting(json, "max_weighted", String(max_weighted));
-      JSonizer::addSetting(json, "max_unweighted", String(max_unweighted));
-      JSonizer::addSetting(json, "in_publish_window()", String(JSonizer::toString(in_publish_window())));
+      JSonizer::addSetting(json, "accumulated_max", String(accumulated_max));
+      JSonizer::addSetting(json, "in_washing_window()", String(JSonizer::toString(in_washing_window())));
       json.concat("}");
       Particle.publish("SensorHandler json", json);
     }
 };
 SensorHandler sensorhandler;
-
-int set_publish_rate(String cmd) {
-  return publishRateHandler.setPublishRate(cmd);
-}
 
 int sample_and_publish(String cmd) {
   sensorhandler.sample_and_publish_();
@@ -371,6 +325,11 @@ int determine_cutoff(String cmd) {
   return 1;
 }
 
+int reset_max(String cmd) {
+  sensorhandler.reset_max();
+  return 1;
+}
+
 // getSettings() is already defined somewhere.
 int publish_settings(String command) {
     if (command.compareTo("") == 0) {
@@ -379,8 +338,6 @@ int publish_settings(String command) {
         timeSupport.publishJson();
     } else if (command.compareTo("sensor") == 0) {
         sensorhandler.publishJson();
-    } else if (command.compareTo("rate") == 0) {
-        publishRateHandler.publishJson();
     } else {
         String msg(command);
         msg.concat(" : expected [empty], \"time\", \"sensor\" or \"rate\"");
@@ -393,10 +350,10 @@ int publish_settings(String command) {
 void setup() {
   Serial.begin(57600);
   Particle.function("GetData", sample_and_publish);
-  Particle.function("SetPubRate", set_publish_rate);
   Particle.function("GetSetting", publish_settings);
   Particle.function("PrintRaw", print_raw);
   Particle.function("Cutoff", determine_cutoff);
+  Particle.function("ResetMax", reset_max);
 }
 
 void loop() {
