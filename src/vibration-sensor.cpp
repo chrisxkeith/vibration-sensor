@@ -157,6 +157,15 @@ class Utils {
       json.concat("}");
       Particle.publish("Utils json", json);
     }
+    static bool hasSerial() {
+      String deviceID = System.deviceID();
+      return deviceID.equals(PHOTON_02) || deviceID.equals(PHOTON_08);
+    }
+    static void println(String s) {
+      if (hasSerial()) {
+        Serial.println(s.c_str());
+      }
+    }
     static String getDeviceLocation() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) {
@@ -238,7 +247,7 @@ class SensorHandler {
         ret.concat(A0_val);
         ret.concat(",");
         ret.concat(num_reads);
-        Serial.println(ret);
+        Utils::println(ret);
       }
     }
     uint16_t getMaxForPin(int pin) {
@@ -285,7 +294,7 @@ class SensorHandler {
       }
       printRawValues(false);
       if (millis() - last_print_time > 2000) {
-        Serial.println(getJson());
+        Utils::println(getJson());
         last_print_time = millis();
       }
     }
