@@ -272,7 +272,7 @@ class SensorHandler {
     }
     bool in_washing_window() {
       int hour = Time.hour();
-      return ((hour > 7) && (hour < 18)); // 8 am to 5 pm, one hopes
+      return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
     }
     String getJson() {
       String json("{");
