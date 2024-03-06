@@ -206,19 +206,26 @@ class Utils {
 class SensorHandler {
   private:
     int seconds_for_sample = 1;
-    uint16_t max_weighted = 0;
+    uint16_t max_A0 = 0;
+    uint16_t max_A1 = 0;
     unsigned long last_print_time = 0;
 
     const int PIEZO_PIN_0 = A0;
+    const int PIEZO_PIN_1 = A1;
     const int NUM_SAMPLES = 1000;
     const int PUBLISH_RATE_IN_SECONDS = 5;
 
     void getVoltages() {
-      max_weighted = 0;
+      max_A0 = 0;
+      max_A1 = 0;
       for (int i = 0; i < NUM_SAMPLES; i++) {
         uint16_t piezoV = analogRead(PIEZO_PIN_0);
-        if (piezoV > max_weighted) {
-          max_weighted = piezoV;
+        if (piezoV > max_A0) {
+          max_A0 = piezoV;
+        }
+        piezoV = analogRead(PIEZO_PIN_1);
+        if (piezoV > max_A1) {
+          max_A1 = piezoV;
         }
       }
     }
@@ -264,7 +271,10 @@ class SensorHandler {
     void sample_and_publish() {
         getVoltages();
         String json("{");
-        JSonizer::addFirstSetting(json, "max_weighted", getJson(Utils::getDeviceLocation() + " weighted", max_weighted));
+        JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_A0));
+        if (System.deviceID().equals(PHOTON_08)) {
+          JSonizer::addSetting(json, "max_A1", getJson(Utils::getDeviceLocation() + " A1", max_A1));
+        }
         json.concat("}");
         Particle.publish("vibration", json);
         int theDelay = PUBLISH_RATE_IN_SECONDS - seconds_for_sample;
@@ -278,8 +288,9 @@ class SensorHandler {
       String json("{");
       JSonizer::addFirstSetting(json, "seconds_for_sample", String(seconds_for_sample));
       JSonizer::addSetting(json, "PIEZO_PIN_0", String(PIEZO_PIN_0));
+      JSonizer::addSetting(json, "PIEZO_PIN_1", String(PIEZO_PIN_1));
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
-      JSonizer::addSetting(json, "max_weighted", String(max_weighted));
+      JSonizer::addSetting(json, "max_weighted", String(max_A0));
       JSonizer::addSetting(json, "in_washing_window()", String(JSonizer::toString(in_washing_window())));
       json.concat("}");
       return json;
@@ -287,6 +298,7 @@ class SensorHandler {
   public:
     SensorHandler() {
       pinMode(PIEZO_PIN_0, INPUT);
+      pinMode(PIEZO_PIN_1, INPUT);
     }
     void monitor_sensor() {
       if (in_washing_window()) {
