@@ -62,14 +62,17 @@ class TimeSupport {
 };
 
 String TimeSupport::getSettings() {
+    time_t n = Time.now();
+    time_t restarted = n - (millis() / 1000);
+    time_t lastSyncTime = restarted + (lastSyncMillis / 1000);
+
     String json("{");
-    JSonizer::addFirstSetting(json, "lastSyncMillis", String(lastSyncMillis));
-    JSonizer::addSetting(json, "internalTime", now());
-    JSonizer::addSetting(json, "isDST", JSonizer::toString(isDST()));
+    JSonizer::addFirstSetting(json, "restarted", timeStr(restarted));
+    JSonizer::addSetting(json, "lastSyncMillis", String(lastSyncMillis));
+    JSonizer::addSetting(json, "lastSyncTime", timeStr(lastSyncTime));
     JSonizer::addSetting(json, "timeZoneOffset", String(timeZoneOffset));
-    JSonizer::addSetting(json, "Time.day()", String(Time.day()));
-    JSonizer::addSetting(json, "Time.month()", String(Time.month()));
-    JSonizer::addSetting(json, "Time.weekday()", String(Time.weekday()));
+    JSonizer::addSetting(json, "isDST", JSonizer::toString(isDST()));
+    JSonizer::addSetting(json, "internalTime", now());
     json.concat("}");
     return json;
 }
