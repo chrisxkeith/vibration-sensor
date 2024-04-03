@@ -171,14 +171,8 @@ class Utils {
     }
     static String getDeviceLocation() {
       String deviceID = System.deviceID();
-      if (deviceID.equals(PHOTON_01)) {
-        return "Washer";
-      }
-      if (deviceID.equals(PHOTON_02)) {
-        return "Test_02";
-      }
       if (deviceID.equals(PHOTON_08)) {
-        return "Test_08";
+        return "Washer";
       }
       if (deviceID.equals(PHOTON_09)) {
         return "Dryer";
@@ -329,7 +323,8 @@ class SensorHandler {
         getVoltages();
         String json("{");
         JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_A0));
-        if (System.deviceID().equals(PHOTON_08)) {
+        if (! (Utils::getDeviceLocation().startsWith("Washer") || 
+              (Utils::getDeviceLocation().startsWith("Dryer")))) {
           JSonizer::addSetting(json, "max_A1", getJson(Utils::getDeviceLocation() + " A1", max_A1));
         }
         json.concat("}");
