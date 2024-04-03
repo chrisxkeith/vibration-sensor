@@ -379,6 +379,10 @@ class SensorHandler {
     void publishJson() {
       Particle.publish("SensorHandler json", getJson());
     }
+    uint16_t getMaxA0() {
+        getVoltages();
+        return max_A0;
+    }
 };
 SensorHandler sensorhandler;
 
@@ -417,6 +421,17 @@ int publish_settings(String command) {
     return 1;
 }
 
+int lastDisplay = 0;
+const int DISPLAY_RATE_IN_MS = 2000;
+void display() {
+  int thisMS = millis();
+  if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
+    oledWrapper.displayNumber(String(sensorhandler.getMaxA0()));
+  }
+  lastDisplay = thisMS;
+}
+
+
 void setup() {
   Serial.begin(57600);
   oledWrapper.display("Starting setup...", 1);
@@ -430,4 +445,5 @@ void setup() {
 void loop() {
   timeSupport.handleTime();
   sensorhandler.monitor_sensor();
+  display();
 }
