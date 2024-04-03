@@ -206,6 +206,60 @@ class Utils {
     }
 };
 
+#include <SparkFunMicroOLED.h>
+
+class OLEDWrapper {
+  public:
+    MicroOLED* oled = new MicroOLED();
+
+    OLEDWrapper() {
+        oled->begin();    // Initialize the OLED
+        oled->clear(ALL); // Clear the display's internal memory
+        oled->display();  // Display what's in the buffer (splashscreen)
+        delay(1000);     // Delay 1000 ms
+        oled->clear(PAGE); // Clear the buffer.
+    }
+
+    void display(String title, int font, uint8_t x, uint8_t y) {
+        oled->clear(PAGE);
+        oled->setFontType(font);
+        oled->setCursor(x, y);
+        oled->print(title);
+        oled->display();
+    }
+
+    void display(String title, int font) {
+        display(title, font, 0, 0);
+    }
+
+    void displayNumber(String s) {
+        // To reduce OLED burn-in, shift the digits (if possible) on the odd minutes.
+        int x = 0;
+        if (Time.minute() % 2) {
+            const int MAX_DIGITS = 5;
+            if (s.length() < MAX_DIGITS) {
+                const int FONT_WIDTH = 12;
+                x += FONT_WIDTH * (MAX_DIGITS - s.length());
+            }
+        }
+        display(s, 3, x, 0);
+    }
+
+    void publishJson() {
+        String json("{");
+        JSonizer::addFirstSetting(json, "getLCDWidth()", String(oled->getLCDWidth()));
+        JSonizer::addSetting(json, "getLCDHeight()", String(oled->getLCDHeight()));
+        json.concat("}");
+        Particle.publish("OLED", json);
+    }
+
+    void clear() {
+      oled->clear(ALL);
+    }
+};
+
+OLEDWrapper oledWrapper;
+
 class SensorHandler {
   private:
     int seconds_for_sample = 1;
@@ -352,9 +406,11 @@ int publish_settings(String command) {
         timeSupport.publishJson();
     } else if (command.compareTo("sensor") == 0) {
         sensorhandler.publishJson();
+    } else if (command.compareTo("oled") == 0) {
+        oledWrapper.publishJson();
     } else {
         String msg(command);
-        msg.concat(" : expected [empty], \"time\", \"sensor\" or \"rate\"");
+        msg.concat(" : expected one of [empty], \"time\", \"sensor\", \"oled\"");
         Particle.publish("publish_settings bad input", msg);
         return -1;
     }
@@ -363,10 +419,12 @@ int publish_settings(String command) {
 
 void setup() {
   Serial.begin(57600);
+  oledWrapper.display("Starting setup...", 1);
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
   Particle.function("PrintRaw", print_raw);
   Particle.function("Cutoff", determine_cutoff);
+  oledWrapper.display("Finished setup.", 1);
 }
 
 void loop() {
