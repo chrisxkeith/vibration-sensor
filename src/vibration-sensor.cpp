@@ -174,7 +174,7 @@ class Utils {
       if (deviceID.equals(PHOTON_08)) {
         return "Washer";
       }
-      if (deviceID.equals(PHOTON_09)) {
+      if (deviceID.equals(PHOTON_01)) {
         return "Dryer";
       }
       return "DeviceID: " + deviceID;
