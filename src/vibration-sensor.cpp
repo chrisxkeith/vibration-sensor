@@ -141,6 +141,7 @@ const static String PHOTON_01 = "1c002c001147343438323536";
 const static String PHOTON_02 = "300040001347343438323536";
 const static String PHOTON_08 = "500041000b51353432383931";
 const static String PHOTON_09 = "1f0027001347363336383437";
+const static String PHOTON_15 = "270037000a47373336323230";
 class Utils {
   private:
   public:
@@ -169,34 +170,23 @@ class Utils {
         Serial.println(s.c_str());
       }
     }
+    static String getDeviceName() {
+      String deviceID = System.deviceID();
+      if (deviceID.equals(PHOTON_01)) { return "PHOTON_01"; }
+      if (deviceID.equals(PHOTON_02)) { return "PHOTON_02"; }
+      if (deviceID.equals(PHOTON_08)) { return "PHOTON_08"; }
+      if (deviceID.equals(PHOTON_09)) { return "PHOTON_09"; }
+      if (deviceID.equals(PHOTON_15)) { return "PHOTON_15"; }
+      return "Unknown deviceID: " + deviceID;
+    }
     static String getDeviceLocation() {
       String deviceID = System.deviceID();
-      if (deviceID.equals(PHOTON_08)) {
-        return "Washer";
-      }
-      if (deviceID.equals(PHOTON_01)) {
-        return "Dryer";
-      }
-      return "DeviceID: " + deviceID;
+      if (deviceID.equals(PHOTON_01)) { return "Dryer";  }
+      if (deviceID.equals(PHOTON_08)) { return "Washer"; }
+      return getDeviceName();
     }
     static uint16_t getDeviceCutoff() {
-      const uint16_t VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF = 400;
-      const uint16_t VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF = 550;
-      String deviceID = System.deviceID();
-      if (deviceID.equals(PHOTON_01)) {
-        return VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF;
-      }
-      if (deviceID.equals(PHOTON_02)) {
-        return VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF;
-      }
-      if (deviceID.equals(PHOTON_08)) {
-        return VERTICAL_SMALL_WEIGHTED_SENSOR_CUTOFF;
-      }
-      if (deviceID.equals(PHOTON_09)) {
-        return VERTICAL_LARGE_WEIGHTED_SENSOR_CUTOFF;
-      }
-      Particle.publish("Error", "Unknown device: " + deviceID + " in getDeviceCutoff()");
-      return 0;
+      return 550;
     }
 };
 
@@ -324,7 +314,8 @@ class SensorHandler {
         String json("{");
         JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_A0));
         if (! (Utils::getDeviceLocation().startsWith("Washer") || 
-              (Utils::getDeviceLocation().startsWith("Dryer")))) {
+              (Utils::getDeviceLocation().startsWith("Dryer")) ||
+              (Utils::getDeviceLocation().equals(Utils::getDeviceName())))) {
           JSonizer::addSetting(json, "max_A1", getJson(Utils::getDeviceLocation() + " A1", max_A1));
         }
         json.concat("}");
