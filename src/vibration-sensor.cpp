@@ -143,7 +143,6 @@ const static String PHOTON_08 = "500041000b51353432383931";
 const static String PHOTON_09 = "1f0027001347363336383437";
 const static String PHOTON_15 = "270037000a47373336323230";
 class Utils {
-  private:
   public:
     static int setInt(String command, int& i, int lower, int upper) {
       int tempMin = command.toInt();
@@ -163,7 +162,7 @@ class Utils {
     }
     static bool hasSerial() {
       String deviceID = System.deviceID();
-      return deviceID.equals(PHOTON_02) || deviceID.equals(PHOTON_08);
+      return deviceID.equals(PHOTON_02);
     }
     static void println(String s) {
       if (hasSerial()) {
@@ -249,7 +248,7 @@ class SensorHandler {
     int seconds_for_sample = 1;
     uint16_t max_A0 = 0;
     uint16_t max_A1 = 0;
-    unsigned long last_print_time = 0;
+    unsigned long last_publish_time = 0;
 
     const int PIEZO_PIN_0 = A0;
     const int PIEZO_PIN_1 = A1;
@@ -278,23 +277,11 @@ class SensorHandler {
       return json;
     }
     void printRawValues(bool force) {
-      uint16_t A0_val = 0;
-      uint16_t num_reads = 0;
-      unsigned long then = millis();
-      while (millis() - then < 1000) {
-        uint16_t raw = analogRead(A0);
-        if (raw > A0_val) {
-          A0_val = raw;
-        }
-        num_reads++;
-      }
-      if (force || (num_reads > 0 && (A0_val > Utils::getDeviceCutoff()))) {
+      if (force) {
         String ret;
         ret.concat(timeSupport.now());
         ret.concat(",");
-        ret.concat(A0_val);
-        ret.concat(",");
-        ret.concat(num_reads);
+        ret.concat(max_A0);
         Utils::println(ret);
       }
     }
@@ -310,7 +297,9 @@ class SensorHandler {
       return pinVal;
     }
     void sample_and_publish() {
-        getVoltages();
+      getVoltages();
+      unsigned long now = millis();
+      if (now - last_publish_time > PUBLISH_RATE_IN_SECONDS * 1000) {
         String json("{");
         JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_A0));
         if (! (Utils::getDeviceLocation().startsWith("Washer") || 
@@ -320,8 +309,8 @@ class SensorHandler {
         }
         json.concat("}");
         Particle.publish("vibration", json);
-        int theDelay = PUBLISH_RATE_IN_SECONDS - seconds_for_sample;
-        delay(theDelay * 1000);
+        last_publish_time = millis();
+      }
     }
     bool in_washing_window() {
       int hour = Time.hour();
@@ -347,10 +336,8 @@ class SensorHandler {
       if (in_washing_window()) {
         sample_and_publish();
       }
-      printRawValues(false);
-      if (millis() - last_print_time > 2000) {
-        Utils::println(getJson());
-        last_print_time = millis();
+      if (Utils::hasSerial()) {
+        printRawValues(false);
       }
     }
     void sample_and_publish_() {
@@ -366,7 +353,6 @@ class SensorHandler {
       Particle.publish("SensorHandler json", getJson());
     }
     uint16_t getMaxA0() {
-        getVoltages();
         return max_A0;
     }
 };
@@ -408,13 +394,13 @@ int publish_settings(String command) {
 }
 
 int lastDisplay = 0;
-const int DISPLAY_RATE_IN_MS = 2000;
+const int DISPLAY_RATE_IN_MS = 1000;
 void display() {
   int thisMS = millis();
   if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
     oledWrapper.displayNumber(String(sensorhandler.getMaxA0()));
+    lastDisplay = millis();
   }
-  lastDisplay = thisMS;
 }
 
 
