@@ -257,6 +257,7 @@ class SensorHandler {
     const int PUBLISH_RATE_IN_SECONDS = 5;
 
     void getVoltages() {
+      const uint16_t MAX_VIBRATION_VALUE = 600;
       max_A0 = 0;
       max_A1 = 0;
       for (int i = 0; i < NUM_SAMPLES; i++) {
@@ -268,6 +269,12 @@ class SensorHandler {
         if (piezoV > max_A1) {
           max_A1 = piezoV;
         }
+      }
+      if (max_A0 > MAX_VIBRATION_VALUE) {
+        max_A0 = MAX_VIBRATION_VALUE;
+      }
+      if (max_A1 > MAX_VIBRATION_VALUE) {
+        max_A1 = MAX_VIBRATION_VALUE;
       }
     }
     String getJson(String name, uint16_t value) {
