@@ -292,12 +292,12 @@ class SensorHandler {
         Utils::println(ret);
       }
     }
-    uint16_t getMaxForPin(int pin) {
-      uint16_t pinVal = 0;
+    uint16_t getMinForPin(int pin) {
+      uint16_t pinVal = INT_MAX;
       unsigned long then = millis();
-      while (millis() - then < 1000) {
+      while (millis() - then < 5000) {
         uint16_t raw = analogRead(pin);
-        if (raw > pinVal) {
+        if (raw < pinVal) {
           pinVal = raw;
         }
       }
@@ -353,8 +353,8 @@ class SensorHandler {
     void print_raw_values() {
       printRawValues(true);
     }
-    void determine_cutoff() {
-      Particle.publish("A0 cutoff", String(getMaxForPin(A0)));
+    void determine_baseline() {
+      Particle.publish("A0 baseline", String(getMinForPin(A0)));
     }
     void publishJson() {
       Particle.publish("SensorHandler json", getJson());
@@ -376,8 +376,8 @@ int print_raw(String cmd) {
 }
 
 // Only call when device is not vibrating.
-int determine_cutoff(String cmd) {
-  sensorhandler.determine_cutoff();
+int determine_baseline(String cmd) {
+  sensorhandler.determine_baseline();
   return 1;
 }
 
@@ -417,7 +417,7 @@ void setup() {
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
   Particle.function("PrintRaw", print_raw);
-  Particle.function("Cutoff", determine_cutoff);
+  Particle.function("Baseline", determine_baseline);
   oledWrapper.display("Finished setup.", 1);
 }
 
