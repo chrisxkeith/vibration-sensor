@@ -156,7 +156,7 @@ class Utils {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
       JSonizer::addSetting(json, "getDeviceLocation()", getDeviceLocation());
-      JSonizer::addSetting(json, "getDeviceCutoff()", String(getDeviceCutoff()));
+      JSonizer::addSetting(json, "getDeviceBaseline()", String(getDeviceBaseline()));
       json.concat("}");
       Particle.publish("Utils json", json);
     }
@@ -184,8 +184,12 @@ class Utils {
       if (deviceID.equals(PHOTON_08)) { return "Washer"; }
       return getDeviceName();
     }
-    static uint16_t getDeviceCutoff() {
-      return 550;
+    static uint16_t getDeviceBaseline() {
+      String deviceID = System.deviceID();
+      if (deviceID.equals(PHOTON_01)) { return 152; }
+      if (deviceID.equals(PHOTON_08)) { return 101; }
+      if (deviceID.equals(PHOTON_15)) { return 233; }
+      return 0;
     }
 };
 
