@@ -186,9 +186,9 @@ class Utils {
     }
     static uint16_t getDeviceBaseline() {
       String deviceID = System.deviceID();
-      if (deviceID.equals(PHOTON_01)) { return 152; }
-      if (deviceID.equals(PHOTON_08)) { return 101; }
-      if (deviceID.equals(PHOTON_15)) { return 233; }
+      if (deviceID.equals(PHOTON_01)) { return 445; }
+      if (deviceID.equals(PHOTON_08)) { return 485; }
+      if (deviceID.equals(PHOTON_15)) { return 400; }
       return 0;
     }
 };
@@ -259,6 +259,13 @@ class SensorHandler {
     const int NUM_SAMPLES = 1000;
     const int PUBLISH_RATE_IN_SECONDS = 5;
 
+    uint16_t applyBaseline(uint16_t v) {
+      if (v < Utils::getDeviceBaseline()) {
+        return 0;
+      }
+      return v - Utils::getDeviceBaseline();
+    }
+
     void getVoltages() {
       const uint16_t MAX_VIBRATION_VALUE = 600;
       max_A0 = 0;
@@ -273,6 +280,7 @@ class SensorHandler {
           max_A1 = piezoV;
         }
       }
+      max_A0 = applyBaseline(max_A0);
       if (max_A0 > MAX_VIBRATION_VALUE) {
         max_A0 = MAX_VIBRATION_VALUE;
       }
@@ -295,17 +303,6 @@ class SensorHandler {
         ret.concat(max_A0);
         Utils::println(ret);
       }
-    }
-    uint16_t getMinForPin(int pin) {
-      uint16_t pinVal = INT_MAX;
-      unsigned long then = millis();
-      while (millis() - then < 5000) {
-        uint16_t raw = analogRead(pin);
-        if (raw < pinVal) {
-          pinVal = raw;
-        }
-      }
-      return pinVal;
     }
     void sample_and_publish() {
       getVoltages();
@@ -357,9 +354,6 @@ class SensorHandler {
     void print_raw_values() {
       printRawValues(true);
     }
-    void determine_baseline() {
-      Particle.publish("A0 baseline", String(getMinForPin(A0)));
-    }
     void publishJson() {
       Particle.publish("SensorHandler json", getJson());
     }
@@ -376,12 +370,6 @@ int sample_and_publish(String cmd) {
 
 int print_raw(String cmd) {
   sensorhandler.print_raw_values();
-  return 1;
-}
-
-// Only call when device is not vibrating.
-int determine_baseline(String cmd) {
-  sensorhandler.determine_baseline();
   return 1;
 }
 
@@ -421,7 +409,6 @@ void setup() {
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
   Particle.function("PrintRaw", print_raw);
-  Particle.function("Baseline", determine_baseline);
   oledWrapper.display("Finished setup.", 1);
 }
 
