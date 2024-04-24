@@ -186,9 +186,9 @@ class Utils {
     }
     static uint16_t getDeviceBaseline() {
       String deviceID = System.deviceID();
-      if (deviceID.equals(PHOTON_01)) { return 445; }
-      if (deviceID.equals(PHOTON_08)) { return 485; }
-      if (deviceID.equals(PHOTON_15)) { return 400; }
+      if (deviceID.equals(PHOTON_01)) { return 505; }
+      if (deviceID.equals(PHOTON_08)) { return 545; }
+      if (deviceID.equals(PHOTON_15)) { return 480; }
       return 0;
     }
 };
@@ -267,7 +267,7 @@ class SensorHandler {
     }
 
     void getVoltages() {
-      const uint16_t MAX_VIBRATION_VALUE = 600;
+      const uint16_t MAX_VIBRATION_VALUE = 200;
       max_A0 = 0;
       max_A1 = 0;
       for (int i = 0; i < NUM_SAMPLES; i++) {
