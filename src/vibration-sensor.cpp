@@ -320,10 +320,6 @@ class SensorHandler {
         last_publish_time = millis();
       }
     }
-    bool in_washing_window() {
-      int hour = Time.hour();
-      return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
-    }
     String getJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "seconds_for_sample", String(seconds_for_sample));
@@ -339,6 +335,10 @@ class SensorHandler {
     SensorHandler() {
       pinMode(PIEZO_PIN_0, INPUT);
       pinMode(PIEZO_PIN_1, INPUT);
+    }
+    bool in_washing_window() {
+      int hour = Time.hour();
+      return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
     }
     void monitor_sensor() {
       if (in_washing_window()) {
@@ -397,7 +397,11 @@ const int DISPLAY_RATE_IN_MS = 1000;
 void display() {
   int thisMS = millis();
   if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
-    oledWrapper.displayNumber(String(sensorhandler.getMaxA0()));
+    if (sensorhandler.in_washing_window()) {
+      oledWrapper.displayNumber(String(sensorhandler.getMaxA0()));
+    } else {
+      oledWrapper.display("---", 1);
+    }
     lastDisplay = millis();
   }
 }
