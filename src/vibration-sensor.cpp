@@ -187,7 +187,7 @@ class Utils {
     static uint16_t getDeviceBaseline() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return 505; }
-      if (deviceID.equals(PHOTON_08)) { return 545; }
+      if (deviceID.equals(PHOTON_08)) { return 525; }
       if (deviceID.equals(PHOTON_15)) { return 480; }
       return 0;
     }
