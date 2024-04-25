@@ -280,6 +280,9 @@ class SensorHandler {
           max_A1 = piezoV;
         }
       }
+      if (max_A0 > max_of_max_A0) {
+        max_of_max_A0 = max_A0;
+      }
       max_A0 = applyBaseline(max_A0);
       if (max_A0 > MAX_VIBRATION_VALUE) {
         max_A0 = MAX_VIBRATION_VALUE;
@@ -336,6 +339,7 @@ class SensorHandler {
       pinMode(PIEZO_PIN_0, INPUT);
       pinMode(PIEZO_PIN_1, INPUT);
     }
+    uint16_t max_of_max_A0 = 0;
     bool in_washing_window() {
       int hour = Time.hour();
       return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
@@ -392,6 +396,11 @@ int publish_settings(String command) {
     return 1;
 }
 
+int get_max_of_max(String command) {
+  Particle.publish("max_of_maxA0", String(sensorhandler.max_of_max_A0));
+  return 1;
+}
+
 int lastDisplay = 0;
 const int DISPLAY_RATE_IN_MS = 1000;
 void display() {
@@ -413,6 +422,7 @@ void setup() {
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
   Particle.function("PrintRaw", print_raw);
+  Particle.function("GetMaxOfMx", get_max_of_max);
   oledWrapper.display("Finished setup.", 1);
 }
 
