@@ -407,9 +407,14 @@ void display() {
   int thisMS = millis();
   if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
     if (sensorhandler.in_washing_window()) {
-      oledWrapper.displayNumber(String(sensorhandler.getMaxA0()));
+      uint16_t v = sensorhandler.getMaxA0();
+      if (v > 0) {
+        oledWrapper.displayNumber(String(v));
+      } else {
+        oledWrapper.clear();
+      }
     } else {
-      oledWrapper.display("---", 1);
+      oledWrapper.display("-", 1);
     }
     lastDisplay = millis();
   }
@@ -424,6 +429,8 @@ void setup() {
   Particle.function("PrintRaw", print_raw);
   Particle.function("GetMaxOfMx", get_max_of_max);
   oledWrapper.display("Finished setup.", 1);
+  delay(2000);
+  oledWrapper.clear();
 }
 
 void loop() {
