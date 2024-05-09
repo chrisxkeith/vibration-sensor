@@ -267,7 +267,6 @@ class SensorHandler {
     }
 
     void getVoltages() {
-      const uint16_t MAX_VIBRATION_VALUE = 200;
       max_A0 = 0;
       max_A1 = 0;
       for (int i = 0; i < NUM_SAMPLES; i++) {
@@ -310,7 +309,8 @@ class SensorHandler {
     void sample_and_publish() {
       getVoltages();
       unsigned long now = millis();
-      if (now - last_publish_time > PUBLISH_RATE_IN_SECONDS * 1000) {
+      if (now - last_publish_time > PUBLISH_RATE_IN_SECONDS * 1000 ||
+          max_A0 >= MAX_VIBRATION_VALUE) {
         String json("{");
         JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_A0));
         if (! (Utils::getDeviceLocation().startsWith("Washer") || 
@@ -340,6 +340,7 @@ class SensorHandler {
       pinMode(PIEZO_PIN_1, INPUT);
     }
     uint16_t max_of_max_A0 = 0;
+    const uint16_t MAX_VIBRATION_VALUE = 200;
     bool in_washing_window() {
       int hour = Time.hour();
       return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
@@ -413,8 +414,6 @@ void display() {
       } else {
         oledWrapper.clear();
       }
-    } else {
-      oledWrapper.display("-", 1);
     }
     lastDisplay = millis();
   }
