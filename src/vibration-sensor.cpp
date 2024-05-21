@@ -340,7 +340,8 @@ class SensorHandler {
       pinMode(PIEZO_PIN_1, INPUT);
     }
     uint16_t max_of_max_A0 = 0;
-    const uint16_t MAX_VIBRATION_VALUE = 200 + 480; // Keep max low enough to show 'usual' vibration in graph.
+    const uint16_t BASE_LINE = 415;
+    const uint16_t MAX_VIBRATION_VALUE = 200 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
     bool in_washing_window() {
       int hour = Time.hour();
       return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
@@ -409,7 +410,11 @@ void display() {
   if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
     if (sensorhandler.in_washing_window()) {
       uint16_t v = sensorhandler.getMaxA0();
-      oledWrapper.displayNumber(String(v));
+      if (v >= sensorhandler.BASE_LINE) {
+        oledWrapper.displayNumber(String(v));
+      } else {
+        oledWrapper.clear();
+      }
     }
     lastDisplay = millis();
   }
