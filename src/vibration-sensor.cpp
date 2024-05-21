@@ -186,9 +186,9 @@ class Utils {
     }
     static uint16_t getDeviceBaseline() {
       String deviceID = System.deviceID();
-      if (deviceID.equals(PHOTON_01)) { return 505; }
-      if (deviceID.equals(PHOTON_08)) { return 525; }
-      if (deviceID.equals(PHOTON_15)) { return 480; }
+      if (deviceID.equals(PHOTON_01)) { return 50; }
+      if (deviceID.equals(PHOTON_08)) { return 100; }
+      if (deviceID.equals(PHOTON_15)) { return 0; }
       return 0;
     }
 };
@@ -309,8 +309,7 @@ class SensorHandler {
     void sample_and_publish() {
       getVoltages();
       unsigned long now = millis();
-      if (now - last_publish_time > PUBLISH_RATE_IN_SECONDS * 1000 ||
-          max_A0 >= MAX_VIBRATION_VALUE) {
+      if (now - last_publish_time > PUBLISH_RATE_IN_SECONDS * 1000) {
         String json("{");
         JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_A0));
         if (! (Utils::getDeviceLocation().startsWith("Washer") || 
@@ -331,6 +330,7 @@ class SensorHandler {
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
       JSonizer::addSetting(json, "max_weighted", String(max_A0));
       JSonizer::addSetting(json, "in_washing_window()", String(JSonizer::toString(in_washing_window())));
+      JSonizer::addSetting(json, "MAX_VIBRATION_VALUE", String(MAX_VIBRATION_VALUE));
       json.concat("}");
       return json;
     }
@@ -340,7 +340,7 @@ class SensorHandler {
       pinMode(PIEZO_PIN_1, INPUT);
     }
     uint16_t max_of_max_A0 = 0;
-    const uint16_t MAX_VIBRATION_VALUE = 200;
+    const uint16_t MAX_VIBRATION_VALUE = 200 + 480; // Keep max low enough to show 'usual' vibration in graph.
     bool in_washing_window() {
       int hour = Time.hour();
       return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
@@ -409,11 +409,7 @@ void display() {
   if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
     if (sensorhandler.in_washing_window()) {
       uint16_t v = sensorhandler.getMaxA0();
-      if (v > 0) {
-        oledWrapper.displayNumber(String(v));
-      } else {
-        oledWrapper.clear();
-      }
+      oledWrapper.displayNumber(String(v));
     }
     lastDisplay = millis();
   }
