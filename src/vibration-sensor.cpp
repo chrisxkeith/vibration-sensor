@@ -340,7 +340,7 @@ class SensorHandler {
       pinMode(PIEZO_PIN_1, INPUT);
     }
     uint16_t max_of_max_A0 = 0;
-    const uint16_t BASE_LINE = 415;
+    const uint16_t BASE_LINE = 425;
     const uint16_t MAX_VIBRATION_VALUE = 200 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
     bool in_washing_window() {
       int hour = Time.hour();
