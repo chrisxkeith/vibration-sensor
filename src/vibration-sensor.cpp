@@ -108,8 +108,7 @@ bool TimeSupport::isDST() {
 }
 
 String TimeSupport::timeStr(time_t t) {
-    String fmt("%Y-%m-%dT%H:%M:%S");
-    return Time.format(t, fmt);
+    return Time.format(t, TIME_FORMAT_ISO8601_FULL);
 }
 
 String TimeSupport::now() {
@@ -117,10 +116,9 @@ String TimeSupport::now() {
 }
 
 void TimeSupport::doHandleTime() {
-  Time.zone(this->timeZoneOffset);
   Particle.syncTime();
   this->setDST();
-  Particle.syncTime(); // Now that we know (mostly) if we're in daylight savings time.
+  Time.zone(this->timeZoneOffset);
   this->lastSyncMillis = millis();
 }
 
@@ -279,8 +277,8 @@ class SensorHandler {
           max_A1 = piezoV;
         }
       }
-      if (max_A0 > max_of_max_A0) {
-        max_of_max_A0 = max_A0;
+      if (max_A0 > max_in_publish_interval) {
+        max_in_publish_interval = max_A0;
       }
       max_A0 = applyBaseline(max_A0);
       if (max_A0 > MAX_VIBRATION_VALUE) {
@@ -311,7 +309,7 @@ class SensorHandler {
       unsigned long now = millis();
       if (now - last_publish_time > PUBLISH_RATE_IN_SECONDS * 1000) {
         String json("{");
-        JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_A0));
+        JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_in_publish_interval));
         if (! (Utils::getDeviceLocation().startsWith("Washer") || 
               (Utils::getDeviceLocation().startsWith("Dryer")) ||
               (Utils::getDeviceLocation().equals(Utils::getDeviceName())))) {
@@ -320,6 +318,7 @@ class SensorHandler {
         json.concat("}");
         Particle.publish("vibration", json);
         last_publish_time = millis();
+        max_in_publish_interval = 0;
       }
     }
     String getJson() {
@@ -339,7 +338,7 @@ class SensorHandler {
       pinMode(PIEZO_PIN_0, INPUT);
       pinMode(PIEZO_PIN_1, INPUT);
     }
-    uint16_t max_of_max_A0 = 0;
+    uint16_t max_in_publish_interval = 0;
     const uint16_t BASE_LINE = 425;
     const uint16_t MAX_VIBRATION_VALUE = 200 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
     bool in_washing_window() {
@@ -399,7 +398,7 @@ int publish_settings(String command) {
 }
 
 int get_max_of_max(String command) {
-  Particle.publish("max_of_maxA0", String(sensorhandler.max_of_max_A0));
+  Particle.publish("max_of_maxA0", String(sensorhandler.max_in_publish_interval));
   return 1;
 }
 
