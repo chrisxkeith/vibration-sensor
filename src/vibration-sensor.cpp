@@ -278,12 +278,12 @@ class SensorHandler {
           max_A1 = piezoV;
         }
       }
-      if (max_A0 > max_in_publish_interval) {
-        max_in_publish_interval = max_A0;
-      }
       max_A0 = applyBaseline(max_A0);
       if (max_A0 > MAX_VIBRATION_VALUE) {
         max_A0 = MAX_VIBRATION_VALUE;
+      }
+      if (max_A0 > max_in_publish_interval) {
+        max_in_publish_interval = max_A0;
       }
       if (max_A1 > MAX_VIBRATION_VALUE) {
         max_A1 = MAX_VIBRATION_VALUE;
@@ -296,26 +296,11 @@ class SensorHandler {
       json.concat("}");
       return json;
     }
-    void printRawValues(bool force) {
-      if (force) {
-        String ret;
-        ret.concat(timeSupport.now());
-        ret.concat(",");
-        ret.concat(max_A0);
-        Utils::println(ret);
-      }
-    }
-    void sample_and_publish() {
-      getVoltages();
+    void publish_max() {
       unsigned long now = millis();
       if (now - last_publish_time > PUBLISH_RATE_IN_SECONDS * 1000) {
         String json("{");
         JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_in_publish_interval));
-        if (! (Utils::getDeviceLocation().startsWith("Washer") || 
-              (Utils::getDeviceLocation().startsWith("Dryer")) ||
-              (Utils::getDeviceLocation().equals(Utils::getDeviceName())))) {
-          JSonizer::addSetting(json, "max_A1", getJson(Utils::getDeviceLocation() + " A1", max_A1));
-        }
         json.concat("}");
         Particle.publish("vibration", json);
         last_publish_time = millis();
@@ -347,18 +332,15 @@ class SensorHandler {
       return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
     }
     void monitor_sensor() {
+      getVoltages();
       if (in_washing_window()) {
-        sample_and_publish();
-      }
-      if (Utils::hasSerial()) {
-        printRawValues(false);
+        if (max_in_publish_interval >= BASE_LINE) {
+          publish_max();
+        }
       }
     }
     void sample_and_publish_() {
-      sample_and_publish();
-    }
-    void print_raw_values() {
-      printRawValues(true);
+      publish_max();
     }
     void publishJson() {
       Particle.publish("SensorHandler json", getJson());
@@ -371,11 +353,6 @@ SensorHandler sensorhandler;
 
 int sample_and_publish(String cmd) {
   sensorhandler.sample_and_publish_();
-  return 1;
-}
-
-int print_raw(String cmd) {
-  sensorhandler.print_raw_values();
   return 1;
 }
 
@@ -424,12 +401,13 @@ void display() {
 void setup() {
   Serial.begin(57600);
   oledWrapper.display("Starting setup...", 1);
+  Particle.publish("Starting setup...");
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
-  Particle.function("PrintRaw", print_raw);
   Particle.function("GetMaxOfMx", get_max_of_max);
   oledWrapper.display("Finished setup.", 1);
   delay(2000);
+  Particle.publish("Finished setup...");
   oledWrapper.clear();
 }
 
