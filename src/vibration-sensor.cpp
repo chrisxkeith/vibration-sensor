@@ -150,21 +150,16 @@ class Utils {
       }
       return -1;
     }
+    static void publish(String event, String data) {
+      Particle.publish(event, data);
+      delay(1000);
+    }
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
       JSonizer::addSetting(json, "build","Sat, Jun  8, 2024  9:13:58 AM");
       json.concat("}");
       Particle.publish("Utils json", json);
-    }
-    static bool hasSerial() {
-      String deviceID = System.deviceID();
-      return deviceID.equals(PHOTON_02);
-    }
-    static void println(String s) {
-      if (hasSerial()) {
-        Serial.println(s.c_str());
-      }
     }
     static String getDeviceName() {
       String deviceID = System.deviceID();
@@ -267,6 +262,7 @@ class SensorHandler {
         json.concat("}");
         Particle.publish("vibration", json);
     }
+    long unsigned int last_time_of_max = 0;
     void getVoltages() {
       max_A0 = 0;
       max_A1 = 0;
@@ -283,6 +279,9 @@ class SensorHandler {
       max_A0 = applyBaseline(max_A0);
       if (max_A0 > MAX_VIBRATION_VALUE) {
         max_A0 = MAX_VIBRATION_VALUE;
+        if (! in_publishing_window()) {
+          last_time_of_max = millis();
+        }
       }
       if (max_A0 > max_in_publish_interval) {
         max_in_publish_interval = max_A0;
@@ -309,9 +308,9 @@ class SensorHandler {
     uint16_t max_in_publish_interval = 0;
     const uint16_t BASE_LINE = 425;
     const uint16_t MAX_VIBRATION_VALUE = 200 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
-    bool in_washing_window() {
-      int hour = Time.hour();
-      return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
+    bool in_publishing_window() {
+      const unsigned long TWO_HOURS_IN_MS = 1000 * 60 * 60 * 2;
+      return ((last_time_of_max > 0) && (millis() - last_time_of_max < TWO_HOURS_IN_MS));
     }
     String getJson() {
       String json("{");
@@ -320,7 +319,7 @@ class SensorHandler {
       JSonizer::addSetting(json, "PIEZO_PIN_1", String(PIEZO_PIN_1));
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
       JSonizer::addSetting(json, "max_weighted", String(max_A0));
-      JSonizer::addSetting(json, "in_washing_window()", String(JSonizer::toString(in_washing_window())));
+      JSonizer::addSetting(json, "in_publishing_window()", String(JSonizer::toString(in_publishing_window())));
       JSonizer::addSetting(json, "MAX_VIBRATION_VALUE", String(MAX_VIBRATION_VALUE));
       JSonizer::addSetting(json, "getDeviceName()", Utils::getDeviceName());
       JSonizer::addSetting(json, "getDeviceLocation()", Utils::getDeviceLocation());
@@ -337,10 +336,8 @@ class SensorHandler {
     }
     void monitor_sensor() {
       getVoltages();
-      if (in_washing_window()) {
-        if (max_in_publish_interval >= BASE_LINE) {
-          publish_max();
-        }
+      if (in_publishing_window()) {
+        publish_max();
         display();
       }
     }
@@ -390,16 +387,15 @@ int publish_settings(String command) {
 }
 
 void setup() {
-  Serial.begin(57600);
   oledWrapper.display("Starting setup...", 1);
-  Particle.publish("Starting setup...");
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
-  oledWrapper.display("Finished setup.", 1);
-  delay(2000);
-  Particle.publish("Finished setup...");
-  oledWrapper.clear();
+  delay(1000);
   sensorhandler.sample_and_publish_();
+  oledWrapper.display("Setup finished", 1);
+  delay(2000);
+  Utils::publish("setup()", "Finished");
+  oledWrapper.clear();
 }
 
 void loop() {
