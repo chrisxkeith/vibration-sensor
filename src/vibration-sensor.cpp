@@ -169,9 +169,7 @@ class Utils {
     static String getDeviceName() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return "PHOTON_01"; }
-      if (deviceID.equals(PHOTON_02)) { return "PHOTON_02"; }
       if (deviceID.equals(PHOTON_08)) { return "PHOTON_08"; }
-      if (deviceID.equals(PHOTON_09)) { return "PHOTON_09"; }
       if (deviceID.equals(PHOTON_15)) { return "PHOTON_15"; }
       return "Unknown deviceID: " + deviceID;
     }
@@ -308,6 +306,13 @@ class SensorHandler {
         max_in_publish_interval = 0;
       }
     }
+    uint16_t max_in_publish_interval = 0;
+    const uint16_t BASE_LINE = 425;
+    const uint16_t MAX_VIBRATION_VALUE = 200 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
+    bool in_washing_window() {
+      int hour = Time.hour();
+      return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
+    }
     String getJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "seconds_for_sample", String(seconds_for_sample));
@@ -323,17 +328,12 @@ class SensorHandler {
       json.concat("}");
       return json;
     }
+    int       lastDisplay = 0;
+    const int DISPLAY_RATE_IN_MS = 1000;
   public:
     SensorHandler() {
       pinMode(PIEZO_PIN_0, INPUT);
       pinMode(PIEZO_PIN_1, INPUT);
-    }
-    uint16_t max_in_publish_interval = 0;
-    const uint16_t BASE_LINE = 425;
-    const uint16_t MAX_VIBRATION_VALUE = 200 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
-    bool in_washing_window() {
-      int hour = Time.hour();
-      return ((hour > 6) && (hour < 22)); // 7 am to 9 pm, one hopes
     }
     void monitor_sensor() {
       getVoltages();
@@ -344,8 +344,6 @@ class SensorHandler {
         display();
       }
     }
-    int       lastDisplay = 0;
-    const int DISPLAY_RATE_IN_MS = 1000;
     void display() {
       int thisMS = millis();
       if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
@@ -391,18 +389,12 @@ int publish_settings(String command) {
     return 1;
 }
 
-int get_max_of_max(String command) {
-  Particle.publish("max_of_maxA0", String(sensorhandler.max_in_publish_interval));
-  return 1;
-}
-
 void setup() {
   Serial.begin(57600);
   oledWrapper.display("Starting setup...", 1);
   Particle.publish("Starting setup...");
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
-  Particle.function("GetMaxOfMx", get_max_of_max);
   oledWrapper.display("Finished setup.", 1);
   delay(2000);
   Particle.publish("Finished setup...");
