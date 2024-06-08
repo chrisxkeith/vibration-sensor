@@ -157,7 +157,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build","Sat, Jun  8, 2024  9:13:58 AM");
+      JSonizer::addSetting(json, "build","~ Sat, Jun  8, 2024 11:01:17 AM");
       json.concat("}");
       Particle.publish("Utils json", json);
     }
