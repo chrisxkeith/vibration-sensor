@@ -179,13 +179,14 @@ class Utils {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return "Dryer";  }
       if (deviceID.equals(PHOTON_08)) { return "Washer"; }
+      if (deviceID.equals(PHOTON_15)) { return "Test Unit"; }
       return getDeviceName();
     }
     static uint16_t getDeviceBaseline() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return 60; }
       if (deviceID.equals(PHOTON_08)) { return 100; }
-      if (deviceID.equals(PHOTON_15)) { return 0; }
+      if (deviceID.equals(PHOTON_15)) { return 30; }
       return 0;
     }
 };
@@ -262,7 +263,12 @@ class SensorHandler {
       }
       return v - Utils::getDeviceBaseline();
     }
-
+    void do_publish() {
+        String json("{");
+        JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_in_publish_interval));
+        json.concat("}");
+        Particle.publish("vibration", json);
+    }
     void getVoltages() {
       max_A0 = 0;
       max_A1 = 0;
@@ -297,10 +303,7 @@ class SensorHandler {
     void publish_max() {
       unsigned long now = millis();
       if (now - last_publish_time > PUBLISH_RATE_IN_SECONDS * 1000) {
-        String json("{");
-        JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_in_publish_interval));
-        json.concat("}");
-        Particle.publish("vibration", json);
+        do_publish();
         last_publish_time = millis();
         max_in_publish_interval = 0;
       }
@@ -355,7 +358,8 @@ class SensorHandler {
       }
     }
     void sample_and_publish_() {
-      publish_max();
+      getVoltages();
+      do_publish();
     }
     void publishJson() {
       Particle.publish("SensorHandler json", getJson());
@@ -392,8 +396,6 @@ int get_max_of_max(String command) {
   return 1;
 }
 
-
-
 void setup() {
   Serial.begin(57600);
   oledWrapper.display("Starting setup...", 1);
@@ -405,6 +407,7 @@ void setup() {
   delay(2000);
   Particle.publish("Finished setup...");
   oledWrapper.clear();
+  sensorhandler.sample_and_publish_();
 }
 
 void loop() {
