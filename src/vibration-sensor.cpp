@@ -153,9 +153,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "getDeviceLocation()", getDeviceLocation());
-      JSonizer::addSetting(json, "getDeviceBaseline()", String(getDeviceBaseline()));
-      JSonizer::addSetting(json, "build","Sat, May 25, 2024 12:05:48 PM");
+      JSonizer::addSetting(json, "build","Sat, Jun  8, 2024  9:13:58 AM");
       json.concat("}");
       Particle.publish("Utils json", json);
     }
@@ -316,6 +314,9 @@ class SensorHandler {
       JSonizer::addSetting(json, "max_weighted", String(max_A0));
       JSonizer::addSetting(json, "in_washing_window()", String(JSonizer::toString(in_washing_window())));
       JSonizer::addSetting(json, "MAX_VIBRATION_VALUE", String(MAX_VIBRATION_VALUE));
+      JSonizer::addSetting(json, "getDeviceName()", Utils::getDeviceName());
+      JSonizer::addSetting(json, "getDeviceLocation()", Utils::getDeviceLocation());
+      JSonizer::addSetting(json, "getDeviceBaseline()", String(Utils::getDeviceBaseline()));
       json.concat("}");
       return json;
     }
@@ -337,6 +338,20 @@ class SensorHandler {
         if (max_in_publish_interval >= BASE_LINE) {
           publish_max();
         }
+        display();
+      }
+    }
+    int       lastDisplay = 0;
+    const int DISPLAY_RATE_IN_MS = 1000;
+    void display() {
+      int thisMS = millis();
+      if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
+        if (max_A0 >= BASE_LINE) {
+          oledWrapper.displayNumber(String(max_A0));
+        } else {
+          oledWrapper.clear();
+        }
+        lastDisplay = millis();
       }
     }
     void sample_and_publish_() {
@@ -344,9 +359,6 @@ class SensorHandler {
     }
     void publishJson() {
       Particle.publish("SensorHandler json", getJson());
-    }
-    uint16_t getMaxA0() {
-        return max_A0;
     }
 };
 SensorHandler sensorhandler;
@@ -380,22 +392,6 @@ int get_max_of_max(String command) {
   return 1;
 }
 
-int lastDisplay = 0;
-const int DISPLAY_RATE_IN_MS = 1000;
-void display() {
-  int thisMS = millis();
-  if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
-    if (sensorhandler.in_washing_window()) {
-      uint16_t v = sensorhandler.getMaxA0();
-      if (v >= sensorhandler.BASE_LINE) {
-        oledWrapper.displayNumber(String(v));
-      } else {
-        oledWrapper.clear();
-      }
-    }
-    lastDisplay = millis();
-  }
-}
 
 
 void setup() {
@@ -414,5 +410,4 @@ void setup() {
 void loop() {
   timeSupport.handleTime();
   sensorhandler.monitor_sensor();
-  display();
 }
