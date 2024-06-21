@@ -157,7 +157,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build","~ Mon, 10 Jun 2024 07:21:28 -0700"); // date -R
+      JSonizer::addSetting(json, "build","~ Fri, 21 Jun 2024 08:23:19 -0700"); // date -R
       json.concat("}");
       Particle.publish("Utils json", json);
     }
@@ -177,7 +177,7 @@ class Utils {
     }
     static uint16_t getDeviceBaseline() {
       String deviceID = System.deviceID();
-      if (deviceID.equals(PHOTON_01)) { return 60; }
+      if (deviceID.equals(PHOTON_01)) { return 75; }
       if (deviceID.equals(PHOTON_08)) { return 100; }
       if (deviceID.equals(PHOTON_15)) { return 30; }
       return 0;
