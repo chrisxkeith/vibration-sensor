@@ -157,7 +157,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build","~ Fri, 21 Jun 2024 08:23:19 -0700"); // date -R
+      JSonizer::addSetting(json, "build","~ Sun, 23 Jun 2024 10:32:46 -0700"); // date -R
       json.concat("}");
       Particle.publish("Utils json", json);
     }
@@ -307,7 +307,7 @@ class SensorHandler {
     }
     uint16_t max_in_publish_interval = 0;
     const uint16_t BASE_LINE = 425;
-    const uint16_t MAX_VIBRATION_VALUE = 200 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
+    const uint16_t MAX_VIBRATION_VALUE = 150 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
     bool in_publishing_window() {
       const unsigned long TWO_HOURS_IN_MS = 1000 * 60 * 60 * 2;
       return ((last_time_of_max > 0) && (millis() - last_time_of_max < TWO_HOURS_IN_MS));
