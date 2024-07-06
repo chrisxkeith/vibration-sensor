@@ -135,6 +135,11 @@ void TimeSupport::publishJson() {
 }
 TimeSupport    timeSupport(-8);
 
+#define DELAY_BEFORE_RESET 2000
+const unsigned int resetDelayMillis = DELAY_BEFORE_RESET;
+unsigned long resetSync = millis();
+bool resetFlag = false;
+
 const static String PHOTON_01 = "1c002c001147343438323536";
 const static String PHOTON_02 = "300040001347343438323536";
 const static String PHOTON_08 = "500041000b51353432383931";
@@ -182,7 +187,18 @@ class Utils {
       if (deviceID.equals(PHOTON_15)) { return 30; }
       return 0;
     }
+    static void checkForRemoteReset() {
+      if ((resetFlag) && (millis() - resetSync >=  resetDelayMillis)) {
+        Particle.publish("Debug", "System.reset() Initiated", 300, PRIVATE);
+        System.reset();
+      }
+    }
 };
+int remoteResetFunction(String command) {
+  resetFlag = true;
+  resetSync = millis();
+  return 0;
+}
 
 #include <SparkFunMicroOLED.h>
 
@@ -390,6 +406,7 @@ void setup() {
   oledWrapper.display("Starting setup...", 1);
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
+  Particle.function("reset", remoteResetFunction);
   delay(1000);
   sensorhandler.sample_and_publish_();
   oledWrapper.display("Setup finished", 1);
@@ -401,4 +418,5 @@ void setup() {
 void loop() {
   timeSupport.handleTime();
   sensorhandler.monitor_sensor();
+  Utils::checkForRemoteReset();
 }
