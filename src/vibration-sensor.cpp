@@ -162,7 +162,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build","~ Sun, 23 Jun 2024 10:32:46 -0700"); // date -R
+      JSonizer::addSetting(json, "build","~ Sat, 13 Jul 2024 09:50:31 -0700"); // date -R
       json.concat("}");
       Particle.publish("Utils json", json);
     }
@@ -278,7 +278,8 @@ class SensorHandler {
         json.concat("}");
         Particle.publish("vibration", json);
     }
-    long unsigned int last_time_of_max = 0;
+    long unsigned int last_millis_of_max = 0;
+    String last_time_of_max;
     void getVoltages() {
       max_A0 = 0;
       max_A1 = 0;
@@ -296,7 +297,8 @@ class SensorHandler {
       if (max_A0 > MAX_VIBRATION_VALUE) {
         max_A0 = MAX_VIBRATION_VALUE;
         if (! in_publishing_window()) {
-          last_time_of_max = millis();
+          last_millis_of_max = millis();
+          last_time_of_max = timeSupport.now();
         }
       }
       if (max_A0 > max_in_publish_interval) {
@@ -326,11 +328,12 @@ class SensorHandler {
     const uint16_t MAX_VIBRATION_VALUE = 150 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
     bool in_publishing_window() {
       const unsigned long TWO_HOURS_IN_MS = 1000 * 60 * 60 * 2;
-      return ((last_time_of_max > 0) && (millis() - last_time_of_max < TWO_HOURS_IN_MS));
+      return ((last_millis_of_max > 0) && (millis() - last_millis_of_max < TWO_HOURS_IN_MS));
     }
     String getJson() {
       String json("{");
-      JSonizer::addFirstSetting(json, "seconds_for_sample", String(seconds_for_sample));
+      JSonizer::addFirstSetting(json, "last_time_of_max", last_time_of_max);
+      JSonizer::addSetting(json, "seconds_for_sample", String(seconds_for_sample));
       JSonizer::addSetting(json, "PIEZO_PIN_0", String(PIEZO_PIN_0));
       JSonizer::addSetting(json, "PIEZO_PIN_1", String(PIEZO_PIN_1));
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
@@ -340,6 +343,7 @@ class SensorHandler {
       JSonizer::addSetting(json, "getDeviceName()", Utils::getDeviceName());
       JSonizer::addSetting(json, "getDeviceLocation()", Utils::getDeviceLocation());
       JSonizer::addSetting(json, "getDeviceBaseline()", String(Utils::getDeviceBaseline()));
+      JSonizer::addSetting(json, "last_millis_of_max", String(last_millis_of_max));
       json.concat("}");
       return json;
     }
