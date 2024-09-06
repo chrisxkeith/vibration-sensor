@@ -160,9 +160,22 @@ class Utils {
       delay(1000);
     }
     static void publishJson() {
+      unsigned long ms = millis();
+      unsigned long seconds = (ms / 1000) % 60;
+      unsigned long minutes = (ms / 1000 / 60) % 60;
+      unsigned long hours = (ms / 1000 / 60 / 60);
+      String elapsed;
+      if (hours > 24) {
+        elapsed.concat("hours > 24");
+      } else {
+        char s[32];
+        sprintf(s, "%02u:%02u:%02u", hours, minutes, seconds);
+        elapsed.concat(s);
+      }
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build","~ Sat, 13 Jul 2024 09:50:31 -0700"); // date -R
+      JSonizer::addSetting(json, "build", "~ Fri, 06 Sep 2024 13:39:00 -0700"); // date -R
+      JSonizer::addSetting(json, "timeSinceRestart", elapsed);
       json.concat("}");
       Particle.publish("Utils json", json);
     }
