@@ -159,7 +159,7 @@ class Utils {
       Particle.publish(event, data);
       delay(1000);
     }
-    static void publishJson() {
+    static String elapsedUpTime() {
       unsigned long ms = millis();
       unsigned long seconds = (ms / 1000) % 60;
       unsigned long minutes = (ms / 1000 / 60) % 60;
@@ -172,10 +172,13 @@ class Utils {
         sprintf(s, "%02u:%02u:%02u", hours, minutes, seconds);
         elapsed.concat(s);
       }
+      return elapsed;
+    }
+    static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Fri, 06 Sep 2024 13:39:00 -0700"); // date -R
-      JSonizer::addSetting(json, "timeSinceRestart", elapsed);
+      JSonizer::addSetting(json, "build", "~ Thu, Oct  3, 2024  8:15:53 AM");
+      JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       json.concat("}");
       Particle.publish("Utils json", json);
     }
@@ -371,7 +374,7 @@ class SensorHandler {
       getVoltages();
       if (in_publishing_window()) {
         publish_max();
-        display();
+        // display();
       }
     }
     void display() {
@@ -419,6 +422,24 @@ int publish_settings(String command) {
     return 1;
 }
 
+unsigned long lastUpTimeDisplay = 0;
+unsigned int lastY = 0;
+void displayUpTime() {
+  if (millis() - lastUpTimeDisplay > 1000) {
+    lastY += 1;
+    if (lastY > 32 - 12) {
+      lastY = 0;
+    }
+    unsigned long ms = millis();
+    unsigned long seconds = (ms / 1000) % 60;
+    unsigned long minutes = (ms / 1000 / 60) % 60;
+    char s[32];
+    sprintf(s, "%02u:%02u", minutes, seconds);
+    oledWrapper.display(s, 1, 0, lastY);
+    lastUpTimeDisplay = millis();
+  }
+}
+
 void setup() {
   oledWrapper.display("Starting setup...", 1);
   Particle.function("GetData", sample_and_publish);
@@ -434,6 +455,7 @@ void setup() {
 
 void loop() {
   timeSupport.handleTime();
+  displayUpTime();
   sensorhandler.monitor_sensor();
   Utils::checkForRemoteReset();
 }
