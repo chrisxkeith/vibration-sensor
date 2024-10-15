@@ -177,7 +177,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Thu, Oct  3, 2024  8:15:53 AM");
+      JSonizer::addSetting(json, "build", "~ Tue, Oct 15, 2024  8:41:48 AM");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       json.concat("}");
       Particle.publish("Utils json", json);
@@ -435,7 +435,7 @@ void displayUpTime() {
     unsigned long minutes = (ms / 1000 / 60) % 60;
     char s[32];
     sprintf(s, "%02u:%02u", minutes, seconds);
-    oledWrapper.display(s, 1, 0, lastY);
+    oledWrapper.display(s, 2, 0, lastY);
     lastUpTimeDisplay = millis();
   }
 }
