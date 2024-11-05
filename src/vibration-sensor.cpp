@@ -177,7 +177,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Tue, Oct 15, 2024  8:41:48 AM");
+      JSonizer::addSetting(json, "build", "~ Tue Nov  5 09:20:36 AM PST 2024");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       json.concat("}");
       Particle.publish("Utils json", json);
@@ -281,6 +281,7 @@ class SensorHandler {
     const int PIEZO_PIN_1 = A1;
     const int NUM_SAMPLES = 1000;
     const int PUBLISH_RATE_IN_SECONDS = 5;
+    String rawValues;
 
     uint16_t applyBaseline(uint16_t v) {
       if (v < Utils::getDeviceBaseline()) {
@@ -299,8 +300,13 @@ class SensorHandler {
     void getVoltages() {
       max_A0 = 0;
       max_A1 = 0;
+      rawValues.remove(0);
       for (int i = 0; i < NUM_SAMPLES; i++) {
         uint16_t piezoV = analogRead(PIEZO_PIN_0);
+        if (i < 20) {
+          rawValues.concat(piezoV);
+          rawValues.concat(" ");
+        }
         if (piezoV > max_A0) {
           max_A0 = piezoV;
         }
@@ -360,6 +366,7 @@ class SensorHandler {
       JSonizer::addSetting(json, "getDeviceLocation()", Utils::getDeviceLocation());
       JSonizer::addSetting(json, "getDeviceBaseline()", String(Utils::getDeviceBaseline()));
       JSonizer::addSetting(json, "last_millis_of_max", String(last_millis_of_max));
+      JSonizer::addSetting(json, "rawValues", rawValues);
       json.concat("}");
       return json;
     }
