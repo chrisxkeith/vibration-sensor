@@ -177,7 +177,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Tue Nov  5 09:20:36 AM PST 2024");
+      JSonizer::addSetting(json, "build", "~ Wed Nov  6 01:37:27 PM PST 2024");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       json.concat("}");
       Particle.publish("Utils json", json);
@@ -381,7 +381,9 @@ class SensorHandler {
       getVoltages();
       if (in_publishing_window()) {
         publish_max();
-        // display();
+        if (Utils::getDeviceLocation().equals("Test Unit")) {
+          display();
+        }
       }
     }
     void display() {
@@ -462,7 +464,9 @@ void setup() {
 
 void loop() {
   timeSupport.handleTime();
-  displayUpTime();
+  if (!Utils::getDeviceLocation().equals("Test Unit")) {
+    displayUpTime();
+  }
   sensorhandler.monitor_sensor();
   Utils::checkForRemoteReset();
 }
