@@ -180,6 +180,7 @@ class Utils {
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
       JSonizer::addSetting(json, "build", "~ Fri, Aug 15, 2025  2:11:15 PM");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
+      JSonizer::addSetting(json, "getDeviceName", getDeviceName());
       json.concat("}");
       Particle.publish("Utils json", json);
     }
