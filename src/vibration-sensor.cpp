@@ -462,6 +462,7 @@ void setup() {
   oledWrapper.display("Setup finished", 1);
   delay(2000);
   Utils::publish("setup()", "Finished");
+  Utils::publishJson();
   oledWrapper.clear();
 }
 
