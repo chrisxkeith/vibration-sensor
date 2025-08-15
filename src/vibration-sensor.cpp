@@ -142,6 +142,7 @@ bool resetFlag = false;
 
 const static String PHOTON_01 = "1c002c001147343438323536";
 const static String PHOTON_02 = "300040001347343438323536";
+const static String PHOTON_07 = "32002e000e47363433353735";
 const static String PHOTON_08 = "500041000b51353432383931";
 const static String PHOTON_09 = "1f0027001347363336383437";
 const static String PHOTON_15 = "270037000a47373336323230";
@@ -185,6 +186,7 @@ class Utils {
     static String getDeviceName() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return "PHOTON_01"; }
+      if (deviceID.equals(PHOTON_07)) { return "PHOTON_07"; }
       if (deviceID.equals(PHOTON_08)) { return "PHOTON_08"; }
       if (deviceID.equals(PHOTON_15)) { return "PHOTON_15"; }
       return "Unknown deviceID: " + deviceID;
@@ -192,6 +194,7 @@ class Utils {
     static String getDeviceLocation() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return "Dryer";  }
+      if (deviceID.equals(PHOTON_07)) { return "Dryer 2"; }
       if (deviceID.equals(PHOTON_08)) { return "Washer"; }
       if (deviceID.equals(PHOTON_15)) { return "Test Unit"; }
       return getDeviceName();
@@ -199,7 +202,8 @@ class Utils {
     static uint16_t getDeviceBaseline() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return 75; }
-      if (deviceID.equals(PHOTON_08)) { return 100; }
+      if (deviceID.equals(PHOTON_07)) { return 100; }
+      if (deviceID.equals(PHOTON_08)) { return 75; }
       if (deviceID.equals(PHOTON_15)) { return 30; }
       return 0;
     }
