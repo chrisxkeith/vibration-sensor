@@ -240,7 +240,7 @@ class OLEDWrapper {
       u8g2.setFontDirection(0);
     }
   public:
-    OLEDWrapper() {
+    void startup() {
       pinMode(10, OUTPUT);
       pinMode(9, OUTPUT);
       digitalWrite(10, 0);
@@ -300,6 +300,9 @@ class OLEDWrapper {
         oled->display();  // Display what's in the buffer (splashscreen)
         delay(1000);     // Delay 1000 ms
         oled->clear(PAGE); // Clear the buffer.
+    }
+
+    void startup() {
     }
 
     void display(String title, int font, uint8_t x, uint8_t y) {
@@ -521,6 +524,7 @@ void displayUpTime() {
 }
 
 void setup() {
+  oledWrapper.startup();
   oledWrapper.display("Starting setup...", 1);
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
