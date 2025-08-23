@@ -178,7 +178,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Fri, Aug 15, 2025  2:11:15 PM");
+      JSonizer::addSetting(json, "build", "~ Sat, Aug 23, 2025  9:32:37 AM");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceName", getDeviceName());
       json.concat("}");
@@ -231,7 +231,8 @@ U8G2_SSD1327_EA_W128128_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 class OLEDWrapper {
   private:
     void display_(String s, int x, int y) {
-      u8g2.drawUTF8(x, y, s.c_str());
+      // u8g2.drawUTF8(x, y, s.c_str());
+      Utils::publish("Debug", "Displaying: " + s);
     }
     void u8g2_prepare(void) {
       u8g2.setFont(u8g2_font_fur49_tn);
