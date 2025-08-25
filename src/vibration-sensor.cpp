@@ -190,9 +190,11 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Sat, Aug 23, 2025  9:32:37 AM");
+      JSonizer::addSetting(json, "build", "~ Mon, Aug 25, 2025  9:51:49 AM");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceName", getDeviceName());
+      JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
+      JSonizer::addSetting(json, "getDeviceBaseline", String(getDeviceBaseline()));
       json.concat("}");
       Particle.publish("Utils json", json);
     }
