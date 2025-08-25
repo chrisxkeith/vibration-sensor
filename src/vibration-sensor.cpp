@@ -60,6 +60,7 @@ class TimeSupport {
     int setTimeZoneOffset(String command);
     void publishJson();
     String getUpTime();
+    String getMinSecString(unsigned long ms);
 };
 
 String TimeSupport::getSettings() {
@@ -135,14 +136,17 @@ void TimeSupport::publishJson() {
     Particle.publish("TimeSupport", getSettings());
 }
 
-String TimeSupport::getUpTime() {
-  unsigned long ms = millis();
+String TimeSupport::getMinSecString(unsigned long ms) {
   unsigned long seconds = (ms / 1000) % 60;
   unsigned long minutes = (ms / 1000 / 60) % 60;
   char s[32];
   sprintf(s, "%02u:%02u", minutes, seconds);
   String elapsed(s);
   return elapsed;
+}
+
+String TimeSupport::getUpTime() {
+  return getMinSecString(millis());
 }
 
 TimeSupport    timeSupport(-8);
@@ -386,7 +390,8 @@ class SensorHandler {
     }
     void do_publish() {
         String json("{");
-        JSonizer::addFirstSetting(json, "max_A0", getJson(Utils::getDeviceLocation() + " A0", max_in_publish_interval));
+        JSonizer::addFirstSetting(json, "max_in_publish_interval", String(max_in_publish_interval));
+        JSonizer::addSetting(json, "last_millis_of_max", timeSupport.getMinSecString(last_millis_of_max));
         json.concat("}");
         Particle.publish("vibration", json);
     }
@@ -548,12 +553,12 @@ void setup() {
   Particle.function("GetSetting", publish_settings);
   Particle.function("reset", remoteResetFunction);
   delay(1000);
+  Utils::publishJson();
   sensorhandler.sample_and_publish_();
   oledWrapper.display("Setup finished", 1);
   delay(2000);
-  Utils::publish("setup()", "Finished");
-  Utils::publishJson();
   oledWrapper.clear();
+  Utils::publish("setup()", "Finished");
 }
 
 void loop() {
