@@ -59,6 +59,7 @@ class TimeSupport {
     void handleTime();
     int setTimeZoneOffset(String command);
     void publishJson();
+    String getUpTime();
 };
 
 String TimeSupport::getSettings() {
@@ -133,6 +134,17 @@ void TimeSupport::handleTime() {
 void TimeSupport::publishJson() {
     Particle.publish("TimeSupport", getSettings());
 }
+
+String TimeSupport::getUpTime() {
+  unsigned long ms = millis();
+  unsigned long seconds = (ms / 1000) % 60;
+  unsigned long minutes = (ms / 1000 / 60) % 60;
+  char s[32];
+  sprintf(s, "%02u:%02u", minutes, seconds);
+  String elapsed(s);
+  return elapsed;
+}
+
 TimeSupport    timeSupport(-8);
 
 #define DELAY_BEFORE_RESET 2000
@@ -306,12 +318,16 @@ class OLEDWrapper {
     void startup() {
     }
 
-    void display(String title, int font, uint8_t x, uint8_t y) {
-        oled->clear(PAGE);
+    void display_no_clear(String title, int font, uint8_t x, uint8_t y) {
         oled->setFontType(font);
         oled->setCursor(x, y);
         oled->print(title);
         oled->display();
+    }
+
+    void display(String title, int font, uint8_t x, uint8_t y) {
+        oled->clear(PAGE);
+        display_no_clear(title, font, x, y);
     }
 
     void display(String title, int font) {
@@ -449,6 +465,8 @@ class SensorHandler {
     }
     int       lastDisplay = 0;
     const int DISPLAY_RATE_IN_MS = 1000;
+    int       baseline = 0;
+    const int MAX_BASELINE = 16;
   public:
     SensorHandler() {
       pinMode(PIEZO_PIN_0, INPUT);
@@ -464,10 +482,12 @@ class SensorHandler {
     void display() {
       int thisMS = millis();
       if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
-        if (max_A0 >= BASE_LINE) {
-          oledWrapper.displayNumber(String(max_A0));
-        } else {
-          oledWrapper.clear();
+        oledWrapper.clear();
+        oledWrapper.display(String(max_A0), 1, 0, baseline);
+        oledWrapper.display_no_clear(timeSupport.getUpTime(), 1, 0, baseline + 16);
+        baseline++;
+        if (baseline > MAX_BASELINE) {
+          baseline = 0;
         }
         lastDisplay = millis();
       }
@@ -514,12 +534,7 @@ void displayUpTime() {
     if (lastY > 32 - 12) {
       lastY = 0;
     }
-    unsigned long ms = millis();
-    unsigned long seconds = (ms / 1000) % 60;
-    unsigned long minutes = (ms / 1000 / 60) % 60;
-    char s[32];
-    sprintf(s, "%02u:%02u", minutes, seconds);
-    oledWrapper.display(s, 2, 0, lastY);
+    oledWrapper.display(timeSupport.getUpTime(), 2, 0, lastY);
     lastUpTimeDisplay = millis();
   }
 }
