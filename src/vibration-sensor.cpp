@@ -172,11 +172,13 @@ class Utils {
       alwaysPublishData = true;
       startPublishDataMillis = millis();
     }
-    static void checkPublishData() {
+    static bool publishDataDone() {
       if (millis() - startPublishDataMillis > ALWAYS_PUBLISH_DATA_MILLIS) {
         alwaysPublishData = false;
         startPublishDataMillis = 0;
+        return true;
       }
+      return false;
     }
     static int setInt(String command, int& i, int lower, int upper) {
       int tempMin = command.toInt();
@@ -509,7 +511,9 @@ class SensorHandler {
         publish_max(millis() - Utils::startPublishDataMillis);
         oledWrapper.displayValueAndTime(max_A0,
                               Utils::elapsedTime(millis() - Utils::startPublishDataMillis));
-        Utils::checkPublishData();
+        if (Utils::publishDataDone()) {
+          oledWrapper.clear();
+        }
       } else if (in_publishing_window()) {
         // publish_max(millis() - last_millis_of_max);
         // display();
