@@ -371,21 +371,16 @@ OLEDWrapper oledWrapper;
 
 class SensorHandler {
   private:
-    int seconds_for_sample = 1;
-    uint16_t max_A0 = 0;
-    unsigned long last_publish_time = 0;
-
-    const int PIEZO_PIN_0 = A0;
-    const int NUM_SAMPLES = 1000;
-    const int PUBLISH_RATE_IN_SECONDS = 5;
-    String rawValues;
-
     uint16_t applyBaseline(uint16_t v) {
       if (v < Utils::getDeviceBaseline()) {
         return 0;
       }
       return v - Utils::getDeviceBaseline();
     }
+
+    uint16_t          max_in_publish_interval = 0;
+    long unsigned int last_millis_of_max = 0;
+
     void do_publish() {
         String json("{");
         JSonizer::addFirstSetting(json, "max_in_publish_interval", String(max_in_publish_interval));
@@ -393,17 +388,16 @@ class SensorHandler {
         json.concat("}");
         Particle.publish("vibration", json);
     }
-    long unsigned int last_millis_of_max = 0;
-    String last_time_of_max;
+
+    uint16_t      max_A0 = 0;
+    const int     NUM_SAMPLES = 1000;
+    const int     PIEZO_PIN_0 = A0;
+    String        last_time_of_max;
+
     void getVoltages() {
       max_A0 = 0;
-      rawValues.remove(0);
       for (int i = 0; i < NUM_SAMPLES; i++) {
         uint16_t piezoV = analogRead(PIEZO_PIN_0);
-        if (i < 20) {
-          rawValues.concat(piezoV);
-          rawValues.concat(" ");
-        }
         if (piezoV > max_A0) {
           max_A0 = piezoV;
         }
@@ -420,13 +414,10 @@ class SensorHandler {
         max_in_publish_interval = max_A0;
       }
     }
-    String getJson(String name, uint16_t value) {
-      String json("{");
-      JSonizer::addFirstSetting(json, "eventName", name);
-      JSonizer::addSetting(json, "value", String(value));
-      json.concat("}");
-      return json;
-    }
+
+    unsigned long last_publish_time = 0;
+    const int     PUBLISH_RATE_IN_SECONDS = 5;
+
     void publish_max() {
       unsigned long now = millis();
       if (now - last_publish_time > PUBLISH_RATE_IN_SECONDS * 1000) {
@@ -435,27 +426,24 @@ class SensorHandler {
         max_in_publish_interval = 0;
       }
     }
-    uint16_t max_in_publish_interval = 0;
-    const uint16_t BASE_LINE = 425;
-    const uint16_t MAX_VIBRATION_VALUE = 150 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
+
+    const uint16_t  BASE_LINE = 425;
+    const uint16_t  MAX_VIBRATION_VALUE = 150 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
+
     bool in_publishing_window() {
       const unsigned long TWO_HOURS_IN_MS = 1000 * 60 * 60 * 2;
       return ((last_millis_of_max > 0) && (millis() - last_millis_of_max < TWO_HOURS_IN_MS));
     }
+
     String getJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "last_time_of_max", last_time_of_max);
-      JSonizer::addSetting(json, "seconds_for_sample", String(seconds_for_sample));
       JSonizer::addSetting(json, "PIEZO_PIN_0", String(PIEZO_PIN_0));
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
-      JSonizer::addSetting(json, "max_weighted", String(max_A0));
+      JSonizer::addSetting(json, "max_A0", String(max_A0));
       JSonizer::addSetting(json, "in_publishing_window()", String(JSonizer::toString(in_publishing_window())));
       JSonizer::addSetting(json, "MAX_VIBRATION_VALUE", String(MAX_VIBRATION_VALUE));
-      JSonizer::addSetting(json, "getDeviceName()", Utils::getDeviceName());
-      JSonizer::addSetting(json, "getDeviceLocation()", Utils::getDeviceLocation());
-      JSonizer::addSetting(json, "getDeviceBaseline()", String(Utils::getDeviceBaseline()));
       JSonizer::addSetting(json, "last_millis_of_max", String(last_millis_of_max));
-      JSonizer::addSetting(json, "rawValues", rawValues);
       json.concat("}");
       return json;
     }
