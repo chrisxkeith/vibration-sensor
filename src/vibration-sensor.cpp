@@ -164,6 +164,20 @@ const static String PHOTON_09 = "1f0027001347363336383437";
 const static String PHOTON_15 = "270037000a47373336323230";
 class Utils {
   public:
+    static unsigned long startPublishDataMillis;
+    static bool          alwaysPublishData;
+    const static unsigned long ALWAYS_PUBLISH_DATA_MILLIS = 1000 * 60 * 60 * 2; // 2 hours
+
+    static void setAlwaysPublishData() {
+      alwaysPublishData = true;
+      startPublishDataMillis = millis();
+    }
+    static void checkPublishData() {
+      if (millis() - startPublishDataMillis > ALWAYS_PUBLISH_DATA_MILLIS) {
+        alwaysPublishData = false;
+        startPublishDataMillis = 0;
+      }
+    }
     static int setInt(String command, int& i, int lower, int upper) {
       int tempMin = command.toInt();
       if (tempMin >= lower && tempMin <= upper) {
@@ -176,8 +190,7 @@ class Utils {
       Particle.publish(event, data);
       delay(1000);
     }
-    static String elapsedUpTime() {
-      unsigned long ms = millis();
+    static String elapsedTime(unsigned long ms) {
       unsigned long seconds = (ms / 1000) % 60;
       unsigned long minutes = (ms / 1000 / 60) % 60;
       unsigned long hours = (ms / 1000 / 60 / 60);
@@ -191,14 +204,20 @@ class Utils {
       }
       return elapsed;
     }
+    static String elapsedUpTime() {
+      return elapsedTime(millis());
+    }
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Mon, Aug 25, 2025  9:51:49 AM");
+      JSonizer::addSetting(json, "build", "~ Tue, Aug 26, 2025 10:43:17 AM");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceName", getDeviceName());
       JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
       JSonizer::addSetting(json, "getDeviceBaseline", String(getDeviceBaseline()));
+      JSonizer::addSetting(json, "startPublishDataMillis", String(startPublishDataMillis));
+      JSonizer::addSetting(json, "alwaysPublishData", JSonizer::toString(alwaysPublishData));
+      JSonizer::addSetting(json, "ALWAYS_PUBLISH_DATA_MILLIS", String(ALWAYS_PUBLISH_DATA_MILLIS));
       json.concat("}");
       Particle.publish("Utils json", json);
     }
@@ -233,6 +252,15 @@ class Utils {
       }
     }
 };
+
+unsigned long Utils::startPublishDataMillis = 0;
+bool          Utils::alwaysPublishData = false;
+
+int setAlwaysPublishData(String command) {
+  Utils::setAlwaysPublishData();
+  return 1;
+}
+
 int remoteResetFunction(String command) {
   resetFlag = true;
   resetSync = millis();
@@ -313,6 +341,11 @@ class OLEDWrapper {
   public:
     MicroOLED* oled = new MicroOLED();
 
+    int       lastDisplay = 0;
+    const int DISPLAY_RATE_IN_MS = 1000;
+    int       baseline = 0;
+    const int MAX_BASELINE = 16;
+
     OLEDWrapper() {
         oled->begin();    // Initialize the OLED
         oled->clear(ALL); // Clear the display's internal memory
@@ -353,10 +386,28 @@ class OLEDWrapper {
         display(s, 3, x, 0);
     }
 
+    void displayValueAndTime(int value, String timeStr) {
+      int thisMS = millis();
+      if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
+        clear();
+        display(String(value), 0, 0, baseline);
+        display_no_clear(timeStr, 0, 0, baseline + 16);
+        baseline++;
+        if (baseline > MAX_BASELINE) {
+          baseline = 0;
+        }
+        lastDisplay = millis();
+      }
+    }
+
     void publishJson() {
         String json("{");
         JSonizer::addFirstSetting(json, "getLCDWidth()", String(oled->getLCDWidth()));
         JSonizer::addSetting(json, "getLCDHeight()", String(oled->getLCDHeight()));
+        JSonizer::addSetting(json, "lastDisplay", String(lastDisplay));
+        JSonizer::addSetting(json, "DISPLAY_RATE_IN_MS", String(DISPLAY_RATE_IN_MS));
+        JSonizer::addSetting(json, "baseline", String(baseline));
+        JSonizer::addSetting(json, "MAX_BASELINE", String(MAX_BASELINE));
         json.concat("}");
         Particle.publish("OLED", json);
     }
@@ -447,34 +498,32 @@ class SensorHandler {
       json.concat("}");
       return json;
     }
-    int       lastDisplay = 0;
-    const int DISPLAY_RATE_IN_MS = 1000;
-    int       baseline = 0;
-    const int MAX_BASELINE = 16;
   public:
     SensorHandler() {
       pinMode(PIEZO_PIN_0, INPUT);
     }
+
     void monitor_sensor() {
       getVoltages();
-      if (in_publishing_window()) {
+      if (Utils::alwaysPublishData) {
+        publish_max();
+        oledWrapper.displayValueAndTime(max_A0,
+                              Utils::elapsedTime(millis() - Utils::startPublishDataMillis));
+        Utils::checkPublishData();
+      } else if (in_publishing_window()) {
         publish_max();
         display();
       }
     }
-    void display() {
-      int thisMS = millis();
-      if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
-        oledWrapper.clear();
-        oledWrapper.display(String(max_A0), 1, 0, baseline);
-        oledWrapper.display_no_clear(timeSupport.getUpTime(), 1, 0, baseline + 16);
-        baseline++;
-        if (baseline > MAX_BASELINE) {
-          baseline = 0;
-        }
-        lastDisplay = millis();
-      }
+
+    void display(String timeStr) {
+      oledWrapper.displayValueAndTime(max_A0, timeStr);
     }
+
+    void display() {
+      display(timeSupport.getUpTime());
+    }
+
     void sample_and_publish_() {
       getVoltages();
       do_publish();
@@ -528,6 +577,7 @@ void setup() {
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
   Particle.function("reset", remoteResetFunction);
+  Particle.function("alwaysPub", setAlwaysPublishData);
   delay(1000);
   Utils::publishJson();
   sensorhandler.sample_and_publish_();
