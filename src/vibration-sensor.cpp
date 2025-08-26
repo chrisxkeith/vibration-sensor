@@ -432,10 +432,10 @@ class SensorHandler {
     uint16_t          max_in_publish_interval = 0;
     long unsigned int last_millis_of_max = 0;
 
-    void do_publish() {
+    void do_publish(unsigned long elapsedMillis) {
         String json("{");
         JSonizer::addFirstSetting(json, "max_in_publish_interval", String(max_in_publish_interval));
-        JSonizer::addSetting(json, "last_millis_of_max", timeSupport.getMinSecString(last_millis_of_max));
+        JSonizer::addSetting(json, "elapsedSeconds", String(elapsedMillis / 1000));
         json.concat("}");
         Particle.publish("vibration", json);
     }
@@ -469,10 +469,10 @@ class SensorHandler {
     unsigned long last_publish_time = 0;
     const int     PUBLISH_RATE_IN_SECONDS = 5;
 
-    void publish_max() {
+    void publish_max(unsigned long elapsedMillis) {
       unsigned long now = millis();
       if (now - last_publish_time > PUBLISH_RATE_IN_SECONDS * 1000) {
-        do_publish();
+        do_publish(elapsedMillis);
         last_publish_time = millis();
         max_in_publish_interval = 0;
       }
@@ -506,13 +506,13 @@ class SensorHandler {
     void monitor_sensor() {
       getVoltages();
       if (Utils::alwaysPublishData) {
-        publish_max();
+        publish_max(millis() - Utils::startPublishDataMillis);
         oledWrapper.displayValueAndTime(max_A0,
                               Utils::elapsedTime(millis() - Utils::startPublishDataMillis));
         Utils::checkPublishData();
       } else if (in_publishing_window()) {
-        publish_max();
-        display();
+        // publish_max(millis() - last_millis_of_max);
+        // display();
       }
     }
 
@@ -526,7 +526,7 @@ class SensorHandler {
 
     void sample_and_publish_() {
       getVoltages();
-      do_publish();
+      do_publish(millis() - last_millis_of_max);
     }
     void publishJson() {
       Particle.publish("SensorHandler json", getJson());
