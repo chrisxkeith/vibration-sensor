@@ -373,11 +373,9 @@ class SensorHandler {
   private:
     int seconds_for_sample = 1;
     uint16_t max_A0 = 0;
-    uint16_t max_A1 = 0;
     unsigned long last_publish_time = 0;
 
     const int PIEZO_PIN_0 = A0;
-    const int PIEZO_PIN_1 = A1;
     const int NUM_SAMPLES = 1000;
     const int PUBLISH_RATE_IN_SECONDS = 5;
     String rawValues;
@@ -399,7 +397,6 @@ class SensorHandler {
     String last_time_of_max;
     void getVoltages() {
       max_A0 = 0;
-      max_A1 = 0;
       rawValues.remove(0);
       for (int i = 0; i < NUM_SAMPLES; i++) {
         uint16_t piezoV = analogRead(PIEZO_PIN_0);
@@ -409,10 +406,6 @@ class SensorHandler {
         }
         if (piezoV > max_A0) {
           max_A0 = piezoV;
-        }
-        piezoV = analogRead(PIEZO_PIN_1);
-        if (piezoV > max_A1) {
-          max_A1 = piezoV;
         }
       }
       max_A0 = applyBaseline(max_A0);
@@ -425,9 +418,6 @@ class SensorHandler {
       }
       if (max_A0 > max_in_publish_interval) {
         max_in_publish_interval = max_A0;
-      }
-      if (max_A1 > MAX_VIBRATION_VALUE) {
-        max_A1 = MAX_VIBRATION_VALUE;
       }
     }
     String getJson(String name, uint16_t value) {
@@ -457,7 +447,6 @@ class SensorHandler {
       JSonizer::addFirstSetting(json, "last_time_of_max", last_time_of_max);
       JSonizer::addSetting(json, "seconds_for_sample", String(seconds_for_sample));
       JSonizer::addSetting(json, "PIEZO_PIN_0", String(PIEZO_PIN_0));
-      JSonizer::addSetting(json, "PIEZO_PIN_1", String(PIEZO_PIN_1));
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
       JSonizer::addSetting(json, "max_weighted", String(max_A0));
       JSonizer::addSetting(json, "in_publishing_window()", String(JSonizer::toString(in_publishing_window())));
@@ -477,7 +466,6 @@ class SensorHandler {
   public:
     SensorHandler() {
       pinMode(PIEZO_PIN_0, INPUT);
-      pinMode(PIEZO_PIN_1, INPUT);
     }
     void monitor_sensor() {
       getVoltages();
