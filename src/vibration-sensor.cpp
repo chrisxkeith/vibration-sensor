@@ -201,7 +201,11 @@ class Utils {
         elapsed.concat("hours > 24");
       } else {
         char s[32];
-        sprintf(s, "%02u:%02u:%02u", hours, minutes, seconds);
+        if (hours > 9) {
+          sprintf(s, "!:%02u:%02u", minutes, seconds);
+        } else {
+          sprintf(s, "%01u:%02u:%02u", hours, minutes, seconds);
+        }
         elapsed.concat(s);
       }
       return elapsed;
@@ -392,8 +396,8 @@ class OLEDWrapper {
       int thisMS = millis();
       if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
         clear();
-        display(String(value), 0, 0, baseline);
-        display_no_clear(timeStr, 0, 0, baseline + 16);
+        display(String(value), 1, 0, baseline);
+        display_no_clear(timeStr, 1, 0, baseline + 16);
         baseline++;
         if (baseline > MAX_BASELINE) {
           baseline = 0;
