@@ -212,7 +212,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Tue, Aug 26, 2025 10:43:17 AM");
+      JSonizer::addSetting(json, "build", "~ Mon, Sep  8, 2025  7:30:05 PM");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceName", getDeviceName());
       JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
@@ -234,9 +234,9 @@ class Utils {
     static String getDeviceLocation() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return "Dryer";  }
-      if (deviceID.equals(PHOTON_07)) { return "Dryer 2"; }
+      if (deviceID.equals(PHOTON_07)) { return "Test Unit 07"; }
       if (deviceID.equals(PHOTON_08)) { return "Washer"; }
-      if (deviceID.equals(PHOTON_15)) { return "Test Unit"; }
+      if (deviceID.equals(PHOTON_15)) { return "Test Unit 15"; }
       return getDeviceName();
     }
     static uint16_t getDeviceBaseline() {
@@ -256,7 +256,7 @@ class Utils {
 };
 
 unsigned long Utils::startPublishDataMillis = 0;
-bool          Utils::alwaysPublishData = false;
+bool          Utils::alwaysPublishData = true;
 
 int setAlwaysPublishData(String command) {
   Utils::setAlwaysPublishData();
