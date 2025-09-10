@@ -166,7 +166,7 @@ class Utils {
   public:
     static unsigned long startPublishDataMillis;
     static bool          alwaysPublishData;
-    const static unsigned long ALWAYS_PUBLISH_DATA_MILLIS = 1000 * 60 * 60 * 2; // 2 hours
+    const static unsigned long ALWAYS_PUBLISH_DATA_MILLIS = 1000 * 60 * 60 * 3; // 3 hours
 
     static void setAlwaysPublishData() {
       alwaysPublishData = true;
