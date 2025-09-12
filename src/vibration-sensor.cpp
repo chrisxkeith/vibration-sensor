@@ -274,77 +274,15 @@ int remoteResetFunction(String command) {
   return 0;
 }
 
-// #define USE_U8G2_LIB
-
-#ifdef USE_U8G2_LIB
-#include <U8g2lib.h>
-U8G2_SSD1327_EA_W128128_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
-// Won't compile inside class, so use global variable instead of member variable.
-
-class OLEDWrapper {
-  private:
-    void display_(String s, int x, int y) {
-      // u8g2.drawUTF8(x, y, s.c_str());
-      Utils::publish("Debug", "Displaying: " + s);
-    }
-    void u8g2_prepare(void) {
-      u8g2.setFont(u8g2_font_fur49_tn);
-      u8g2.setFontRefHeightExtendedText();
-      u8g2.setDrawColor(1);
-      u8g2.setFontDirection(0);
-    }
-  public:
-    void startup() {
-      pinMode(10, OUTPUT);
-      pinMode(9, OUTPUT);
-      digitalWrite(10, 0);
-      digitalWrite(9, 0);
-      u8g2.begin();
-      u8g2.setBusClock(400000);
-    }
-    void clear() {
-      u8g2.clearBuffer();
-      u8g2.sendBuffer();
-    }
-    void startDisplay(const uint8_t *font) {
-      u8g2_prepare();
-      u8g2.clearBuffer();
-      u8g2.setFont(font);
-    }
-    void endDisplay() {
-      u8g2.sendBuffer();
-    }
-    void display(String title, int font, uint8_t x, uint8_t y) {
-      startDisplay(u8g2_font_fur49_tn);
-      display_(title, x, y);
-      endDisplay();
-    }
-    void display(String title, int font) {
-        display(title, font, 0, 0);
-    }
-    void displayNumber(String s) {
-        // To reduce OLED burn-in, shift the digits (if possible) on the odd minutes.
-        int x = 0;
-        if (Time.minute() % 2) {
-            const int MAX_DIGITS = 5;
-            if (s.length() < MAX_DIGITS) {
-                const int FONT_WIDTH = 12;
-                x += FONT_WIDTH * (MAX_DIGITS - s.length());
-            }
-        }
-        display(s, 3, x, 0);
-    }
-    void publishJson() {
-        String json("{");
-        JSonizer::addFirstSetting(json, "fu", "bar");
-        json.concat("}");
-        Particle.publish("OLED", json);
-    }
-  };
-
-#else
 #include <SparkFunMicroOLED.h>
 class OLEDWrapper {
+  private:
+      void display_no_clear(String title, int font, uint8_t x, uint8_t y) {
+        oled->setFontType(font);
+        oled->setCursor(x, y);
+        oled->print(title);
+        oled->display();
+    }
   public:
     MicroOLED* oled = new MicroOLED();
 
@@ -353,7 +291,7 @@ class OLEDWrapper {
     int       baseline = 0;
     const int MAX_BASELINE = 16;
 
-    OLEDWrapper() {
+    virtual void startup() {
         oled->begin();    // Initialize the OLED
         oled->clear(ALL); // Clear the display's internal memory
         oled->display();  // Display what's in the buffer (splashscreen)
@@ -361,26 +299,16 @@ class OLEDWrapper {
         oled->clear(PAGE); // Clear the buffer.
     }
 
-    void startup() {
-    }
-
-    void display_no_clear(String title, int font, uint8_t x, uint8_t y) {
-        oled->setFontType(font);
-        oled->setCursor(x, y);
-        oled->print(title);
-        oled->display();
-    }
-
-    void display(String title, int font, uint8_t x, uint8_t y) {
+    virtual void display(String title, int font, uint8_t x, uint8_t y) {
         oled->clear(PAGE);
         display_no_clear(title, font, x, y);
     }
 
-    void display(String title, int font) {
+    virtual void display(String title, int font) {
         display(title, font, 0, 0);
     }
 
-    void displayNumber(String s) {
+    virtual void displayNumber(String s) {
         // To reduce OLED burn-in, shift the digits (if possible) on the odd minutes.
         int x = 0;
         if (Time.minute() % 2) {
@@ -393,7 +321,7 @@ class OLEDWrapper {
         display(s, 3, x, 0);
     }
 
-    void displayValueAndTime(int value, String timeStr) {
+    virtual void displayValueAndTime(int value, String timeStr) {
       int thisMS = millis();
       if (thisMS - lastDisplay > DISPLAY_RATE_IN_MS) {
         clear();
@@ -407,7 +335,7 @@ class OLEDWrapper {
       }
     }
 
-    void publishJson() {
+    virtual void publishJson() {
         String json("{");
         JSonizer::addFirstSetting(json, "getLCDWidth()", String(oled->getLCDWidth()));
         JSonizer::addSetting(json, "getLCDHeight()", String(oled->getLCDHeight()));
@@ -419,13 +347,77 @@ class OLEDWrapper {
         Particle.publish("OLED", json);
     }
 
-    void clear() {
+    virtual void clear() {
       oled->clear(ALL);
     }
 };
-#endif
 
-OLEDWrapper* oledWrapper = new OLEDWrapper();
+#include <U8g2lib.h>
+U8G2_SSD1327_EA_W128128_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
+// Won't compile inside class, so use global variable instead of member variable.
+
+class OLEDWrapperU8g2 : public OLEDWrapper {
+  private:
+    void display_(String s, int x, int y) {
+      // u8g2.drawUTF8(x, y, s.c_str());
+      Utils::publish("Debug", "Displaying: " + s);
+    }
+    void u8g2_prepare(void) {
+      u8g2.setFont(u8g2_font_fur49_tn);
+      u8g2.setFontRefHeightExtendedText();
+      u8g2.setDrawColor(1);
+      u8g2.setFontDirection(0);
+    }
+    void startDisplay(const uint8_t *font) {
+      u8g2_prepare();
+      u8g2.clearBuffer();
+      u8g2.setFont(font);
+    }
+    void endDisplay() {
+      u8g2.sendBuffer();
+    }
+  public:
+    void startup() override {
+      pinMode(10, OUTPUT);
+      pinMode(9, OUTPUT);
+      digitalWrite(10, 0);
+      digitalWrite(9, 0);
+      u8g2.begin();
+      u8g2.setBusClock(400000);
+    }
+    void clear() override {
+      u8g2.clearBuffer();
+      u8g2.sendBuffer();
+    }
+    void display(String title, int font, uint8_t x, uint8_t y) override {
+      startDisplay(u8g2_font_fur49_tn);
+      display_(title, x, y);
+      endDisplay();
+    }
+    void display(String title, int font) override {
+        display(title, font, 0, 0);
+    }
+    void displayNumber(String s) override {
+        // To reduce OLED burn-in, shift the digits (if possible) on the odd minutes.
+        int x = 0;
+        if (Time.minute() % 2) {
+            const int MAX_DIGITS = 5;
+            if (s.length() < MAX_DIGITS) {
+                const int FONT_WIDTH = 12;
+                x += FONT_WIDTH * (MAX_DIGITS - s.length());
+            }
+        }
+        display(s, 3, x, 0);
+    }
+    void publishJson() override {
+        String json("{");
+        JSonizer::addFirstSetting(json, "OLEDWrapperU8g2", "active");
+        json.concat("}");
+        Particle.publish("OLED", json);
+    }
+  };
+
+OLEDWrapper* oledWrapper = nullptr;
 
 class SensorHandler {
   private:
@@ -581,6 +573,7 @@ void displayUpTime() {
 }
 
 void setup() {
+  oledWrapper = new OLEDWrapper();
   oledWrapper->startup();
   oledWrapper->display("Starting setup...", 1);
   Particle.function("GetData", sample_and_publish);
