@@ -162,6 +162,7 @@ const static String PHOTON_07 = "32002e000e47363433353735";
 const static String PHOTON_08 = "500041000b51353432383931";
 const static String PHOTON_09 = "1f0027001347363336383437";
 const static String PHOTON_15 = "270037000a47373336323230";
+const static String PHOTON2_16= "0a10aced202194944a045288";
 class Utils {
   public:
     static unsigned long startPublishDataMillis;
@@ -424,7 +425,7 @@ class OLEDWrapper {
 };
 #endif
 
-OLEDWrapper oledWrapper;
+OLEDWrapper* oledWrapper = new OLEDWrapper();
 
 class SensorHandler {
   private:
@@ -513,10 +514,10 @@ class SensorHandler {
       getVoltages();
       if (Utils::alwaysPublishData) {
         publish_max(millis() - Utils::startPublishDataMillis);
-        oledWrapper.displayValueAndTime(max_A0,
+        oledWrapper->displayValueAndTime(max_A0,
                               Utils::elapsedTime(millis() - Utils::startPublishDataMillis));
         if (Utils::publishDataDone()) {
-          oledWrapper.clear();
+          oledWrapper->clear();
         }
       } else if (in_publishing_window()) {
         // publish_max(millis() - last_millis_of_max);
@@ -525,7 +526,7 @@ class SensorHandler {
     }
 
     void display(String timeStr) {
-      oledWrapper.displayValueAndTime(max_A0, timeStr);
+      oledWrapper->displayValueAndTime(max_A0, timeStr);
     }
 
     void display() {
@@ -556,7 +557,7 @@ int publish_settings(String command) {
     } else if (command.compareTo("sensor") == 0) {
         sensorhandler.publishJson();
     } else if (command.compareTo("oled") == 0) {
-        oledWrapper.publishJson();
+        oledWrapper->publishJson();
     } else {
         String msg(command);
         msg.concat(" : expected one of [empty], \"time\", \"sensor\", \"oled\"");
@@ -574,14 +575,14 @@ void displayUpTime() {
     if (lastY > 32 - 12) {
       lastY = 0;
     }
-    oledWrapper.display(timeSupport.getUpTime(), 2, 0, lastY);
+    oledWrapper->display(timeSupport.getUpTime(), 2, 0, lastY);
     lastUpTimeDisplay = millis();
   }
 }
 
 void setup() {
-  oledWrapper.startup();
-  oledWrapper.display("Starting setup...", 1);
+  oledWrapper->startup();
+  oledWrapper->display("Starting setup...", 1);
   Particle.function("GetData", sample_and_publish);
   Particle.function("GetSetting", publish_settings);
   Particle.function("reset", remoteResetFunction);
@@ -589,9 +590,9 @@ void setup() {
   delay(1000);
   Utils::publishJson();
   sensorhandler.sample_and_publish_();
-  oledWrapper.display("Setup finished", 1);
+  oledWrapper->display("Setup finished", 1);
   delay(2000);
-  oledWrapper.clear();
+  oledWrapper->clear();
   Utils::publish("setup()", "Finished");
 }
 
