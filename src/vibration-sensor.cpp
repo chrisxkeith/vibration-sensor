@@ -217,7 +217,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Mon, Sep  8, 2025  7:30:05 PM");
+      JSonizer::addSetting(json, "build", "~ Tue, Sep 16, 2025  3:09:38 PM");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceName", getDeviceName());
       JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
@@ -541,6 +541,7 @@ int sample_and_publish(String cmd) {
 }
 
 int publish_settings(String cmd);
+int switch_to_u8g2(String cmd);
 
 class App {
   public:
@@ -574,6 +575,18 @@ class App {
         lastUpTimeDisplay = millis();
       }
     }
+    int switch_to_u8g2_(String cmd) {
+      Utils::publish("Debug", "Switching to U8g2");
+      if (oledWrapper != nullptr) {
+        delete oledWrapper;
+      }
+      oledWrapper = new OLEDWrapperU8g2();
+      oledWrapper->startup();
+/*      oledWrapper->display("Using U8g2", 1);
+      delay(2000);
+      oledWrapper->clear();
+*/      return 1;
+    } 
     void setup() {
       oledWrapper = new OLEDWrapper();
       oledWrapper->startup();
@@ -582,6 +595,7 @@ class App {
       Particle.function("GetSetting", publish_settings);
       Particle.function("reset", remoteResetFunction);
       Particle.function("alwaysPub", setAlwaysPublishData);
+      Particle.function("switchOled", switch_to_u8g2);
       delay(1000);
       Utils::publishJson();
       sensorhandler.sample_and_publish_();
@@ -600,6 +614,10 @@ App app;
 
 int publish_settings(String cmd) {
   return app.publish_settings_(cmd);
+}
+
+int switch_to_u8g2(String cmd) {
+  return app.switch_to_u8g2_(cmd);
 }
 
 void setup() {
