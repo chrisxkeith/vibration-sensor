@@ -540,57 +540,72 @@ int sample_and_publish(String cmd) {
   return 1;
 }
 
-// getSettings() is already defined somewhere.
-int publish_settings(String command) {
-    if (command.compareTo("") == 0) {
-        Utils::publishJson();
-    } else if (command.compareTo("time") == 0) {
-        timeSupport.publishJson();
-    } else if (command.compareTo("sensor") == 0) {
-        sensorhandler.publishJson();
-    } else if (command.compareTo("oled") == 0) {
-        oledWrapper->publishJson();
-    } else {
-        String msg(command);
-        msg.concat(" : expected one of [empty], \"time\", \"sensor\", \"oled\"");
-        Particle.publish("publish_settings bad input", msg);
-        return -1;
-    }
-    return 1;
-}
+int publish_settings(String cmd);
 
-unsigned long lastUpTimeDisplay = 0;
-unsigned int lastY = 0;
-void displayUpTime() {
-  if (millis() - lastUpTimeDisplay > 1000) {
-    lastY += 1;
-    if (lastY > 32 - 12) {
-      lastY = 0;
+class App {
+  public:
+      // getSettings() is already defined somewhere.
+    int publish_settings_(String command) {
+        if (command.compareTo("") == 0) {
+            Utils::publishJson();
+        } else if (command.compareTo("time") == 0) {
+            timeSupport.publishJson();
+        } else if (command.compareTo("sensor") == 0) {
+            sensorhandler.publishJson();
+        } else if (command.compareTo("oled") == 0) {
+            oledWrapper->publishJson();
+        } else {
+            String msg(command);
+            msg.concat(" : expected one of [empty], \"time\", \"sensor\", \"oled\"");
+            Particle.publish("publish_settings bad input", msg);
+            return -1;
+        }
+        return 1;
     }
-    oledWrapper->display(timeSupport.getUpTime(), 2, 0, lastY);
-    lastUpTimeDisplay = millis();
-  }
+    unsigned long lastUpTimeDisplay = 0;
+    unsigned int lastY = 0;
+    void displayUpTime() {
+      if (millis() - lastUpTimeDisplay > 1000) {
+        lastY += 1;
+        if (lastY > 32 - 12) {
+          lastY = 0;
+        }
+        oledWrapper->display(timeSupport.getUpTime(), 2, 0, lastY);
+        lastUpTimeDisplay = millis();
+      }
+    }
+    void setup() {
+      oledWrapper = new OLEDWrapper();
+      oledWrapper->startup();
+      oledWrapper->display("Starting setup...", 1);
+      Particle.function("GetData", sample_and_publish);
+      Particle.function("GetSetting", publish_settings);
+      Particle.function("reset", remoteResetFunction);
+      Particle.function("alwaysPub", setAlwaysPublishData);
+      delay(1000);
+      Utils::publishJson();
+      sensorhandler.sample_and_publish_();
+      oledWrapper->display("Setup finished", 1);
+      delay(2000);
+      oledWrapper->clear();
+      Utils::publish("setup()", "Finished");
+    }
+    void loop() {
+      timeSupport.handleTime();
+      sensorhandler.monitor_sensor();
+      Utils::checkForRemoteReset();
+    }
+};
+App app;
+
+int publish_settings(String cmd) {
+  return app.publish_settings_(cmd);
 }
 
 void setup() {
-  oledWrapper = new OLEDWrapper();
-  oledWrapper->startup();
-  oledWrapper->display("Starting setup...", 1);
-  Particle.function("GetData", sample_and_publish);
-  Particle.function("GetSetting", publish_settings);
-  Particle.function("reset", remoteResetFunction);
-  Particle.function("alwaysPub", setAlwaysPublishData);
-  delay(1000);
-  Utils::publishJson();
-  sensorhandler.sample_and_publish_();
-  oledWrapper->display("Setup finished", 1);
-  delay(2000);
-  oledWrapper->clear();
-  Utils::publish("setup()", "Finished");
+  app.setup();
 }
 
 void loop() {
-  timeSupport.handleTime();
-  sensorhandler.monitor_sensor();
-  Utils::checkForRemoteReset();
+  app.loop();
 }
