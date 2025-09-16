@@ -257,6 +257,7 @@ class Utils {
       if (deviceID.equals(PHOTON_01)) { return 515; }
       if (deviceID.equals(PHOTON_07)) { return 415; }
       if (deviceID.equals(PHOTON_08)) { return 440; }
+      if (deviceID.equals(PHOTON_15)) { return 575; } // with no vibration sensor attached
       return 0;
     }
     static void checkForRemoteReset() {
