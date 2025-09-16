@@ -252,6 +252,13 @@ class Utils {
       if (deviceID.equals(PHOTON_15)) { return 30; }
       return 0;
     }
+    static uint16_t getDeviceZeroCorrection() {
+      String deviceID = System.deviceID();
+      if (deviceID.equals(PHOTON_01)) { return 515; }
+      if (deviceID.equals(PHOTON_07)) { return 415; }
+      if (deviceID.equals(PHOTON_08)) { return 440; }
+      return 0;
+    }
     static void checkForRemoteReset() {
       if ((resetFlag) && (millis() - resetSync >=  resetDelayMillis)) {
         Particle.publish("Debug", "System.reset() Initiated", 300, PRIVATE);
@@ -431,9 +438,15 @@ class SensorHandler {
     uint16_t          max_in_publish_interval = 0;
     long unsigned int last_millis_of_max = 0;
 
+    int getZeroCorrected() {
+        if (max_in_publish_interval > Utils::getDeviceZeroCorrection()) {
+          return max_in_publish_interval - Utils::getDeviceZeroCorrection();
+        }
+        return 0;
+    }
     void do_publish(unsigned long elapsedMillis) {
         String json("{");
-        JSonizer::addFirstSetting(json, "max_in_publish_interval", String(max_in_publish_interval));
+        JSonizer::addFirstSetting(json, "max_in_publish_interval", String(getZeroCorrected()));
         JSonizer::addSetting(json, "elapsedSeconds", String(elapsedMillis / 1000));
         json.concat("}");
         Particle.publish("vibration", json);
@@ -506,7 +519,7 @@ class SensorHandler {
       getVoltages();
       if (Utils::alwaysPublishData) {
         publish_max(millis() - Utils::startPublishDataMillis);
-        oledWrapper->displayValueAndTime(max_A0,
+        oledWrapper->displayValueAndTime(getZeroCorrected(),
                               Utils::elapsedTime(millis() - Utils::startPublishDataMillis));
         if (Utils::publishDataDone()) {
           oledWrapper->clear();
