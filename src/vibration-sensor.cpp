@@ -158,6 +158,7 @@ bool resetFlag = false;
 
 const static String PHOTON_01 = "1c002c001147343438323536";
 const static String PHOTON_02 = "300040001347343438323536";
+const static String PHOTON_05 = "19002a001347363336383438";
 const static String PHOTON_07 = "32002e000e47363433353735";
 const static String PHOTON_08 = "500041000b51353432383931";
 const static String PHOTON_09 = "1f0027001347363336383437";
@@ -232,6 +233,7 @@ class Utils {
     static String getDeviceID() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return "PHOTON_01"; }
+      if (deviceID.equals(PHOTON_05)) { return "PHOTON_05"; }
       if (deviceID.equals(PHOTON_07)) { return "PHOTON_07"; }
       if (deviceID.equals(PHOTON_08)) { return "PHOTON_08"; }
       if (deviceID.equals(PHOTON_15)) { return "PHOTON_15"; }
@@ -240,6 +242,7 @@ class Utils {
     static String getDeviceLocation() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return "Dryer";  }
+      if (deviceID.equals(PHOTON_05)) { return "Test Unit 05"; }
       if (deviceID.equals(PHOTON_07)) { return "Test Unit 07"; }
       if (deviceID.equals(PHOTON_08)) { return "Washer"; }
       if (deviceID.equals(PHOTON_15)) { return "Test Unit 15"; }
@@ -248,18 +251,20 @@ class Utils {
     static uint16_t getDeviceBaseline() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return 75; }
+      if (deviceID.equals(PHOTON_05)) { return 100; }
       if (deviceID.equals(PHOTON_07)) { return 100; }
       if (deviceID.equals(PHOTON_08)) { return 75; }
       if (deviceID.equals(PHOTON_15)) { return 30; }
       return 0;
     }
     static uint16_t getDeviceZeroCorrection() {
+      const uint16_t NO_VIBRATION_SENSOR_ATTACHED = 575;
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return 515; }
+      if (deviceID.equals(PHOTON_05)) { return NO_VIBRATION_SENSOR_ATTACHED; }
       if (deviceID.equals(PHOTON_07)) { return 415; }
       if (deviceID.equals(PHOTON_08)) { return 440; }
       if (deviceID.equals(PHOTON_15)) { return 490; }
-      // if (deviceID.equals(???)) { return 575; } // with no vibration sensor attached
       return 0;
     }
     static void checkForRemoteReset() {
