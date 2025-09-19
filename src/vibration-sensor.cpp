@@ -217,18 +217,19 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Tue, Sep 16, 2025  3:09:38 PM");
+      JSonizer::addSetting(json, "build", "~ Thu, Sep 18, 2025  5:55:01 PM");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
-      JSonizer::addSetting(json, "getDeviceName", getDeviceName());
+      JSonizer::addSetting(json, "getDeviceID", getDeviceID());
       JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
       JSonizer::addSetting(json, "getDeviceBaseline", String(getDeviceBaseline()));
+      JSonizer::addSetting(json, "getDeviceZeroCorrection", String(getDeviceZeroCorrection()));
       JSonizer::addSetting(json, "startPublishDataMillis", String(startPublishDataMillis));
       JSonizer::addSetting(json, "alwaysPublishData", JSonizer::toString(alwaysPublishData));
       JSonizer::addSetting(json, "ALWAYS_PUBLISH_DATA_MILLIS", String(ALWAYS_PUBLISH_DATA_MILLIS));
       json.concat("}");
       Particle.publish("Utils json", json);
     }
-    static String getDeviceName() {
+    static String getDeviceID() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return "PHOTON_01"; }
       if (deviceID.equals(PHOTON_07)) { return "PHOTON_07"; }
@@ -242,7 +243,7 @@ class Utils {
       if (deviceID.equals(PHOTON_07)) { return "Test Unit 07"; }
       if (deviceID.equals(PHOTON_08)) { return "Washer"; }
       if (deviceID.equals(PHOTON_15)) { return "Test Unit 15"; }
-      return getDeviceName();
+      return getDeviceID();
     }
     static uint16_t getDeviceBaseline() {
       String deviceID = System.deviceID();
@@ -257,7 +258,8 @@ class Utils {
       if (deviceID.equals(PHOTON_01)) { return 515; }
       if (deviceID.equals(PHOTON_07)) { return 415; }
       if (deviceID.equals(PHOTON_08)) { return 440; }
-      if (deviceID.equals(PHOTON_15)) { return 575; } // with no vibration sensor attached
+      if (deviceID.equals(PHOTON_15)) { return 490; }
+      // if (deviceID.equals(???)) { return 575; } // with no vibration sensor attached
       return 0;
     }
     static void checkForRemoteReset() {
