@@ -164,6 +164,7 @@ const static String PHOTON_08 = "500041000b51353432383931";
 const static String PHOTON_09 = "1f0027001347363336383437";
 const static String PHOTON_15 = "270037000a47373336323230";
 const static String PHOTON2_16= "0a10aced202194944a045288";
+const static String PHOTON2_17= "0a10aced202194944a045200";
 class Utils {
   public:
     static unsigned long startPublishDataMillis;
@@ -218,7 +219,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Thu, Sep 18, 2025  5:55:01 PM");
+      JSonizer::addSetting(json, "build", "~ Thu, Sep 25, 2025 11:26:49 AM");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceID", getDeviceID());
       JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
@@ -238,6 +239,8 @@ class Utils {
       if (deviceID.equals(PHOTON_08)) { return "PHOTON_08"; }
       if (deviceID.equals(PHOTON_09)) { return "PHOTON_09"; }
       if (deviceID.equals(PHOTON_15)) { return "PHOTON_15"; }
+      if (deviceID.equals(PHOTON2_16)){ return "PHOTON2_16"; }
+      if (deviceID.equals(PHOTON2_17)){ return "PHOTON2_17"; }
       return "Unknown deviceID: " + deviceID;
     }
     static String getDeviceLocation() {
@@ -248,6 +251,8 @@ class Utils {
       if (deviceID.equals(PHOTON_08)) { return "Washer"; }
       if (deviceID.equals(PHOTON_09)) { return "Test Unit 09"; }
       if (deviceID.equals(PHOTON_15)) { return "Test Unit 15"; }
+      if (deviceID.equals(PHOTON2_16)){ return "Test Unit 16"; }
+      if (deviceID.equals(PHOTON2_17)){ return "Test Unit 17"; }
       return getDeviceID();
     }
     static uint16_t getDeviceBaseline() {
@@ -257,19 +262,16 @@ class Utils {
       if (deviceID.equals(PHOTON_07)) { return 100; }
       if (deviceID.equals(PHOTON_08)) { return 75; }
       if (deviceID.equals(PHOTON_09)) { return 75; }
-      if (deviceID.equals(PHOTON_15)) { return 30; }
-      return 0;
+      return 30;
     }
     static uint16_t getDeviceZeroCorrection() {
-      const uint16_t NO_VIBRATION_SENSOR_ATTACHED = 575;
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return 515; }
-      if (deviceID.equals(PHOTON_05)) { return NO_VIBRATION_SENSOR_ATTACHED; }
       if (deviceID.equals(PHOTON_07)) { return 415; }
       if (deviceID.equals(PHOTON_08)) { return 440; }
-      if (deviceID.equals(PHOTON_09)) { return NO_VIBRATION_SENSOR_ATTACHED; }
       if (deviceID.equals(PHOTON_15)) { return 490; }
-      return 0;
+      const uint16_t NO_VIBRATION_SENSOR_ATTACHED = 575;
+      return NO_VIBRATION_SENSOR_ATTACHED;
     }
     static void checkForRemoteReset() {
       if ((resetFlag) && (millis() - resetSync >=  resetDelayMillis)) {
