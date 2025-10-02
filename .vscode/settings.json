@@ -1,5 +1,5 @@
 {
-    "particle.targetDevice": "photon2_16",
-    "particle.firmwareVersion": "6.3.3",
-    "particle.targetPlatform": "p2"
+    "particle.targetDevice": "photon-01",
+    "particle.firmwareVersion": "3.3.1",
+    "particle.targetPlatform": "photon"
 }

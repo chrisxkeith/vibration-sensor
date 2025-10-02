@@ -219,7 +219,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Thu, Sep 25, 2025 11:26:49 AM");
+      JSonizer::addSetting(json, "build", "~ Thu, Oct  2, 2025  8:49:27 AM");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceID", getDeviceID());
       JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
@@ -266,7 +266,7 @@ class Utils {
     }
     static uint16_t getDeviceZeroCorrection() {
       String deviceID = System.deviceID();
-      if (deviceID.equals(PHOTON_01)) { return 515; }
+      if (deviceID.equals(PHOTON_01)) { return 555; }
       if (deviceID.equals(PHOTON_07)) { return 415; }
       if (deviceID.equals(PHOTON_08)) { return 440; }
       if (deviceID.equals(PHOTON_15)) { return 490; }
