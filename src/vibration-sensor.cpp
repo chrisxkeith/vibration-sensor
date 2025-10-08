@@ -191,9 +191,15 @@ class Utils {
       }
       return -1;
     }
-    static void publish(String event, String data) {
+    static void publishAndWait(String event, String data, int theDelay) {
       Particle.publish(event, data);
-      delay(1000);
+      delay(theDelay);
+    }
+    static void publishForDebug(String event, String data) {
+      publishAndWait(event, data, 3000);
+    }
+    static void publish(String event, String data) {
+      publishAndWait(event, data, 1000);
     }
     static String elapsedTime(unsigned long ms) {
       unsigned long seconds = (ms / 1000) % 60;
@@ -403,7 +409,11 @@ class OLEDWrapperU8g2 : public OLEDWrapper {
       pinMode(9, OUTPUT);
       digitalWrite(10, 0);
       digitalWrite(9, 0);
-      u8g2.begin();
+      Utils::publishForDebug("Debug", "before u8g2.begin();");
+      if (!u8g2.begin()) {
+        Utils::publish("FAIL", "u8g2.begin");
+      }
+      Utils::publishForDebug("Debug", "before u8g2.setBusClock(400000);");
       u8g2.setBusClock(400000);
     }
     void clear() override {
@@ -532,11 +542,13 @@ class SensorHandler {
     void monitor_sensor() {
       getVoltages();
       if (Utils::alwaysPublishData) {
-        publish_max(millis() - Utils::startPublishDataMillis);
-        oledWrapper->displayValueAndTime(getZeroCorrected(),
-                              Utils::elapsedTime(millis() - Utils::startPublishDataMillis));
-        if (Utils::publishDataDone()) {
-          oledWrapper->clear();
+        if (!Utils::getDeviceID().equals("PHOTON_07")) {
+          publish_max(millis() - Utils::startPublishDataMillis);
+          oledWrapper->displayValueAndTime(getZeroCorrected(),
+                                Utils::elapsedTime(millis() - Utils::startPublishDataMillis));
+          if (Utils::publishDataDone()) {
+            oledWrapper->clear();
+          }
         }
       } else if (in_publishing_window()) {
         // publish_max(millis() - last_millis_of_max);
@@ -603,7 +615,6 @@ class App {
       }
     }
     int switch_to_u8g2_(String cmd) {
-      Utils::publish("Debug", "Switching to U8g2");
       if (oledWrapper != nullptr) {
         delete oledWrapper;
       }
