@@ -165,6 +165,10 @@ const static String PHOTON_09 = "1f0027001347363336383437";
 const static String PHOTON_15 = "270037000a47373336323230";
 const static String PHOTON2_16= "0a10aced202194944a045288";
 const static String PHOTON2_17= "0a10aced202194944a045200";
+
+const uint16_t  BASE_LINE = 425;
+const uint16_t  MAX_VIBRATION_VALUE = 150 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
+
 class Utils {
   public:
     static unsigned long startPublishDataMillis;
@@ -225,7 +229,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Thu, Oct  2, 2025  8:49:27 AM");
+      JSonizer::addSetting(json, "build", "~ Mon Nov  3 05:59:10 PM PST 2025");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceID", getDeviceID());
       JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
@@ -278,6 +282,11 @@ class Utils {
       if (deviceID.equals(PHOTON_15)) { return 490; }
       const uint16_t NO_VIBRATION_SENSOR_ATTACHED = 575;
       return NO_VIBRATION_SENSOR_ATTACHED;
+    }
+    static uint16_t getMaxVibrationValue() {
+      String deviceLocation = getDeviceLocation();
+      if (deviceLocation.equals("Dryer")) { return MAX_VIBRATION_VALUE + 100; }
+      return MAX_VIBRATION_VALUE;
     }
     static void checkForRemoteReset() {
       if ((resetFlag) && (millis() - resetSync >=  resetDelayMillis)) {
@@ -490,8 +499,8 @@ class SensorHandler {
         }
       }
       max_A0 = applyBaseline(max_A0);
-      if (max_A0 > MAX_VIBRATION_VALUE) {
-        max_A0 = MAX_VIBRATION_VALUE;
+      if (max_A0 > Utils::getMaxVibrationValue()) {
+        max_A0 = Utils::getMaxVibrationValue();
         if (! in_publishing_window()) {
           last_millis_of_max = millis();
           last_time_of_max = timeSupport.now();
@@ -514,9 +523,6 @@ class SensorHandler {
       }
     }
 
-    const uint16_t  BASE_LINE = 425;
-    const uint16_t  MAX_VIBRATION_VALUE = 150 + BASE_LINE; // Keep max low enough to show 'usual' vibration in graph.
-
     bool in_publishing_window() {
       const unsigned long TWO_HOURS_IN_MS = 1000 * 60 * 60 * 2;
       return ((last_millis_of_max > 0) && (millis() - last_millis_of_max < TWO_HOURS_IN_MS));
@@ -529,7 +535,7 @@ class SensorHandler {
       JSonizer::addSetting(json, "NUM_SAMPLES", String(NUM_SAMPLES));
       JSonizer::addSetting(json, "max_A0", String(max_A0));
       JSonizer::addSetting(json, "in_publishing_window()", String(JSonizer::toString(in_publishing_window())));
-      JSonizer::addSetting(json, "MAX_VIBRATION_VALUE", String(MAX_VIBRATION_VALUE));
+      JSonizer::addSetting(json, "Utils::getMaxVibrationValue()", String(Utils::getMaxVibrationValue()));
       JSonizer::addSetting(json, "last_millis_of_max", String(last_millis_of_max));
       json.concat("}");
       return json;
