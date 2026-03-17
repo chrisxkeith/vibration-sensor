@@ -310,6 +310,50 @@ int remoteResetFunction(String command) {
   return 0;
 }
 
+class Button {
+  private:
+    int                 pin;
+    bool                lastState;
+    unsigned long       lastDebounceTime;
+    const unsigned long debounceDelay = 50;
+
+  public:
+    Button(int p) :
+          pin(p), lastState(HIGH), lastDebounceTime(0) {}
+    void begin() {
+      pinMode(pin, INPUT_PULLUP);
+    }
+    bool getSingleState(int stateToCheck) {
+      bool reading = digitalRead(pin);
+      if (reading == stateToCheck) {
+        return true;
+      }
+      return false;
+    }
+    bool getState(int stateToCheck) {
+      bool reading = digitalRead(pin);
+      if (reading != lastState) {
+        lastDebounceTime = millis();
+      }
+      if ((millis() - lastDebounceTime) > debounceDelay) {
+        if (reading != lastState) {
+          lastState = reading;
+          if (lastState == stateToCheck) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    bool isPressed() {
+      return getSingleState(LOW);
+      }
+    bool isReleased() {
+      return getSingleState(HIGH);
+    }
+};
+Button button(D1);
+
 #include <SparkFunMicroOLED.h>
 class OLEDWrapper {
   private:
@@ -363,6 +407,7 @@ class OLEDWrapper {
         clear();
         display(String(value), 1, 0, baseline);
         display_no_clear(timeStr, 1, 0, baseline + 16);
+        display_no_clear(button.isPressed() ? "Down" : "Up", 1, 0, baseline + 32);
         baseline++;
         if (baseline > MAX_BASELINE) {
           baseline = 0;
@@ -481,6 +526,7 @@ class SensorHandler {
         String json("{");
         JSonizer::addFirstSetting(json, "max_in_publish_interval", String(getZeroCorrected()));
         JSonizer::addSetting(json, "elapsedSeconds", String(elapsedMillis / 1000));
+        JSonizer::addSetting(json, "buttonState", button.isPressed() ? "Down" : "Up");
         json.concat("}");
         Particle.publish("vibration", json);
     }
@@ -641,6 +687,7 @@ class App {
       Particle.function("alwaysPub", setAlwaysPublishData);
       Particle.function("switchOled", switch_to_u8g2);
       delay(1000);
+      button.begin();
       Utils::publishJson();
       sensorhandler.sample_and_publish_();
       oledWrapper->display("Setup finished", 1);
