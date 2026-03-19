@@ -229,7 +229,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Mon Nov  3 05:59:10 PM PST 2025");
+      JSonizer::addSetting(json, "build", "~ Thu Mar 19 09:10:36 AM PDT 2026");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceID", getDeviceID());
       JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
@@ -313,14 +313,30 @@ int remoteResetFunction(String command) {
 class Button {
   private:
     int                 pin;
+    int                 buttonState;            // the current reading from the input pin
+
+    unsigned long       lastDebounceTime = 0;  // the last time the output pin was toggled
+    unsigned const long BOUNCE_DELAY = 50;    // the debounce time; increase if the output flickers
+    int                 lastButtonState = LOW;  // the previous reading from the input pin
 
   public:
+
     Button(int p) : pin(p) {}
     void begin() {
       pinMode(pin, INPUT);
     }
     bool isPressed() {
-      return digitalRead(pin) == HIGH;
+      int reading = digitalRead(pin);
+      if (reading != lastButtonState) {
+        lastDebounceTime = millis();
+      }
+      if ((millis() - lastDebounceTime) > BOUNCE_DELAY) {
+        if (reading != buttonState) {
+          buttonState = reading;
+        }
+      }
+      lastButtonState = reading;
+      return buttonState == HIGH;
     }
 };
 Button button(D2);
