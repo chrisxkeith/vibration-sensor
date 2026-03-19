@@ -313,46 +313,17 @@ int remoteResetFunction(String command) {
 class Button {
   private:
     int                 pin;
-    bool                lastState;
-    unsigned long       lastDebounceTime;
-    const unsigned long debounceDelay = 50;
 
   public:
-    Button(int p) :
-          pin(p), lastState(HIGH), lastDebounceTime(0) {}
+    Button(int p) : pin(p) {}
     void begin() {
-      pinMode(pin, INPUT_PULLUP);
-    }
-    bool getSingleState(int stateToCheck) {
-      bool reading = digitalRead(pin);
-      if (reading == stateToCheck) {
-        return true;
-      }
-      return false;
-    }
-    bool getState(int stateToCheck) {
-      bool reading = digitalRead(pin);
-      if (reading != lastState) {
-        lastDebounceTime = millis();
-      }
-      if ((millis() - lastDebounceTime) > debounceDelay) {
-        if (reading != lastState) {
-          lastState = reading;
-          if (lastState == stateToCheck) {
-            return true;
-          }
-        }
-      }
-      return false;
+      pinMode(pin, INPUT);
     }
     bool isPressed() {
-      return getSingleState(LOW);
-      }
-    bool isReleased() {
-      return getSingleState(HIGH);
+      return digitalRead(pin) == HIGH;
     }
 };
-Button button(D1);
+Button button(D2);
 
 #include <SparkFunMicroOLED.h>
 class OLEDWrapper {
