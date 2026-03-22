@@ -229,7 +229,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Thu Mar 19 09:10:36 AM PDT 2026");
+      JSonizer::addSetting(json, "build", "~ Sun Mar 22 02:25:37 PM PDT 2026");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceID", getDeviceID());
       JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
@@ -325,7 +325,7 @@ class Button {
     void begin() {
       pinMode(pin, INPUT);
     }
-    bool isPressed() {
+    void checkState() {
       int reading = digitalRead(pin);
       if (reading != lastButtonState) {
         lastDebounceTime = millis();
@@ -336,6 +336,8 @@ class Button {
         }
       }
       lastButtonState = reading;
+    }
+    bool isPressed() {
       return buttonState == HIGH;
     }
 };
@@ -394,7 +396,6 @@ class OLEDWrapper {
         clear();
         display(String(value), 1, 0, baseline);
         display_no_clear(timeStr, 1, 0, baseline + 16);
-        display_no_clear(button.isPressed() ? "Down" : "Up", 1, 0, baseline + 32);
         baseline++;
         if (baseline > MAX_BASELINE) {
           baseline = 0;
@@ -502,6 +503,7 @@ class SensorHandler {
 
     uint16_t          max_in_publish_interval = 0;
     long unsigned int last_millis_of_max = 0;
+    bool              buttonStateInPublishInterval = LOW;
 
     int getZeroCorrected() {
         if (max_in_publish_interval > Utils::getDeviceZeroCorrection()) {
@@ -511,9 +513,10 @@ class SensorHandler {
     }
     void do_publish(unsigned long elapsedMillis) {
         String json("{");
-        JSonizer::addFirstSetting(json, "max_in_publish_interval", String(getZeroCorrected()));
+        JSonizer::addFirstSetting(json, "b", buttonStateInPublishInterval == HIGH ?
+                                                  String(Utils::getMaxVibrationValue()) : "0");
+        JSonizer::addSetting(json, "max_in_publish_interval", String(getZeroCorrected()));
         JSonizer::addSetting(json, "elapsedSeconds", String(elapsedMillis / 1000));
-        JSonizer::addSetting(json, "buttonState", button.isPressed() ? "Down" : "Up");
         json.concat("}");
         Particle.publish("vibration", json);
     }
@@ -553,6 +556,7 @@ class SensorHandler {
         do_publish(elapsedMillis);
         last_publish_time = millis();
         max_in_publish_interval = 0;
+        buttonStateInPublishInterval = LOW;
       }
     }
 
@@ -580,6 +584,10 @@ class SensorHandler {
 
     void monitor_sensor() {
       getVoltages();
+      button.checkState();
+      if (button.isPressed() && buttonStateInPublishInterval == LOW) {
+        buttonStateInPublishInterval = HIGH;
+      }
       if (Utils::alwaysPublishData) {
         if (!Utils::getDeviceID().equals("PHOTON_07")) {
           publish_max(millis() - Utils::startPublishDataMillis);
