@@ -162,6 +162,7 @@ const static String PHOTON_05 = "19002a001347363336383438";
 const static String PHOTON_07 = "32002e000e47363433353735";
 const static String PHOTON_08 = "500041000b51353432383931";
 const static String PHOTON_09 = "1f0027001347363336383437";
+const static String PHOTON_10 = "410027001247363335343834";
 const static String PHOTON_15 = "270037000a47373336323230";
 const static String PHOTON2_16= "0a10aced202194944a045288";
 const static String PHOTON2_17= "0a10aced202194944a045200";
@@ -248,6 +249,7 @@ class Utils {
       if (deviceID.equals(PHOTON_07)) { return "PHOTON_07"; }
       if (deviceID.equals(PHOTON_08)) { return "PHOTON_08"; }
       if (deviceID.equals(PHOTON_09)) { return "PHOTON_09"; }
+      if (deviceID.equals(PHOTON_10)) { return "PHOTON_10"; }
       if (deviceID.equals(PHOTON_15)) { return "PHOTON_15"; }
       if (deviceID.equals(PHOTON2_16)){ return "PHOTON2_16"; }
       if (deviceID.equals(PHOTON2_17)){ return "PHOTON2_17"; }
@@ -260,6 +262,7 @@ class Utils {
       if (deviceID.equals(PHOTON_07)) { return "Test Unit 07"; }
       if (deviceID.equals(PHOTON_08)) { return "Washer"; }
       if (deviceID.equals(PHOTON_09)) { return "Test Unit 09"; }
+      if (deviceID.equals(PHOTON_10)) { return "Test Unit 10"; }
       if (deviceID.equals(PHOTON_15)) { return "Test Unit 15"; }
       if (deviceID.equals(PHOTON2_16)){ return "Test Unit 16"; }
       if (deviceID.equals(PHOTON2_17)){ return "Test Unit 17"; }
@@ -272,13 +275,15 @@ class Utils {
       if (deviceID.equals(PHOTON_07)) { return 100; }
       if (deviceID.equals(PHOTON_08)) { return 75; }
       if (deviceID.equals(PHOTON_09)) { return 75; }
-      return 30;
+      if (deviceID.equals(PHOTON_10)) { return 75; }
+      return 75;
     }
     static uint16_t getDeviceZeroCorrection() {
       String deviceID = System.deviceID();
       if (deviceID.equals(PHOTON_01)) { return 555; }
       if (deviceID.equals(PHOTON_07)) { return 415; }
       if (deviceID.equals(PHOTON_08)) { return 440; }
+      if (deviceID.equals(PHOTON_10)) { return 460; }
       if (deviceID.equals(PHOTON_15)) { return 490; }
       const uint16_t NO_VIBRATION_SENSOR_ATTACHED = 575;
       return NO_VIBRATION_SENSOR_ATTACHED;
@@ -585,7 +590,7 @@ class SensorHandler {
     void monitor_sensor() {
       getVoltages();
       button.checkState();
-      if (button.isPressed() && buttonStateInPublishInterval == LOW) {
+      if (button.isPressed()) {
         buttonStateInPublishInterval = HIGH;
       }
       if (Utils::alwaysPublishData) {
