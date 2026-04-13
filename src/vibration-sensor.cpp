@@ -230,7 +230,7 @@ class Utils {
     static void publishJson() {
       String json("{");
       JSonizer::addFirstSetting(json, "githubRepo", "https://github.com/chrisxkeith/vibration-sensor");
-      JSonizer::addSetting(json, "build", "~ Thu Mar 26 07:48:20 PM PDT 2026");
+      JSonizer::addSetting(json, "build", "~ Mon Apr 13 10:00:27 AM PDT 2026");
       JSonizer::addSetting(json, "timeSinceRestart", elapsedUpTime());
       JSonizer::addSetting(json, "getDeviceID", getDeviceID());
       JSonizer::addSetting(json, "getDeviceLocation", getDeviceLocation());
@@ -519,7 +519,7 @@ class SensorHandler {
     void do_publish(unsigned long elapsedMillis) {
         String json("{");
         JSonizer::addFirstSetting(json, "b", buttonStateInPublishInterval == HIGH ?
-                                                  String(Utils::getMaxVibrationValue()) : "0");
+                                                  "150" : "0");
         JSonizer::addSetting(json, "max_in_publish_interval", String(getZeroCorrected()));
         JSonizer::addSetting(json, "elapsedSeconds", String(elapsedMillis / 1000));
         json.concat("}");
